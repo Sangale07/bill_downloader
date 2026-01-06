@@ -1,6 +1,6 @@
 flask
 flask-cors
 requests
-playwright
+playwright==1.40.0
 beautifulsoup4
 pycryptodome
