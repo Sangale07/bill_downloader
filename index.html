@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Bill Downloader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+
+    header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 15px;
+    }
+
+
+    .tab-btn {
+      padding: 10px 15px;
+      border: 2px solid rgba(255, 255, 255, .3);
+      background: rgba(255, 255, 255, .1);
+      color: white;
+      cursor: pointer;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all .3s;
+    }
+
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, .2);
+    }
+
+
+    .tab-btn.active {
+      background: white;
+      color: #667eea;
+      border-color: white;
+    }
+
+
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+    }
+
+
+    .tab-content {
+      display: none;
+    }
+
+
+    .tab-content.active {
+      display: block;
+    }
+
+
+    .board-header {
+      font-size: 1.5em;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+
+    textarea,
+    input[type="text"],
+    input[type="password"],
+    input[type="month"],
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+
+    .help {
+      font-size: .85em;
+      color: #666;
+      margin-top: 6px;
+    }
+
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .3s;
+    }
+
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      flex: 1;
+    }
+
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, .4);
+    }
+
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+      flex: 0.3;
+    }
+
+
+    .progress-container {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #f0f0f0;
+      display: none;
+    }
+
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #f0f0f0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width .3s;
+    }
+
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      font-size: .9em;
+      color: #666;
+    }
+
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: .85em;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+
+    .status-downloading {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+
+    .status-completed {
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+
+
+    .status-error {
+      background: #ffebee;
+      color: #d32f2f;
+    }
+
+
+    .download-section {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f0f8ff;
+      border-left: 4px solid #667eea;
+      border-radius: 8px;
+      display: none;
+    }
+
+
+    .download-section h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .file-list {
+      margin-top: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .file-info {
+      flex: 1;
+      margin-right: 10px;
+    }
+
+    .file-name {
+      font-weight: 600;
+      color: #333;
+      word-break: break-all;
+    }
+
+    .file-size {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 3px;
+    }
+
+    .btn-download-single {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .3s;
+      white-space: nowrap;
+    }
+
+    .btn-download-single:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, .4);
+    }
+
+
+    .logs {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      max-height: 220px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: .85em;
+    }
+
+
+    .log-item {
+      padding: 5px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+
+    .success {
+      color: #388e3c;
+    }
+
+
+    .error {
+      color: #d32f2f;
+    }
+
+    .main-section {
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+
+<body>
+  <div class="container">
+    <header>
+      <h1>⚡ Electricity Bill Manager</h1>
+      <p>Download bills and register accounts</p>
+    </header>
+
+    <!-- Main Section Tabs -->
+    <div class="tabs" style="margin-bottom: 20px;">
+      <button class="tab-btn active" onclick="switchMainSection('downloader')">📊 Bill Downloader</button>
+      <button class="tab-btn" onclick="switchMainSection('registration')">📝 Registration Bot</button>
+    </div>
+
+    <!-- Bill Downloader Section -->
+    <div id="downloader-section" class="main-section">
+      <div class="tabs" id="tabContainer"></div>
+      <div class="card">
+        <div id="tabContents"></div>
+      </div>
+    </div>
+
+    <!-- Registration Bot Section -->
+    <div id="registration-section" class="main-section" style="display: none;">
+      <div class="card">
+        <div class="board-header">🏢 DISCOM Registration Bot</div>
+        <p style="margin-bottom: 20px; color: #666;">Register accounts on CESC Mysore or Gulbarga DISCOM portals</p>
+        
+        <!-- Backend Status Indicator -->
+        <div id="backend-status" style="padding: 10px; margin-bottom: 20px; border-radius: 8px; display: none;">
+          <strong>⚠️ Backend Not Running</strong>
+          <p style="margin: 5px 0;">Please start the backend server first:</p>
+          <code style="background: #f5f5f5; padding: 5px 10px; border-radius: 4px; display: inline-block;">python backend.py</code>
+        </div>
+        
+        <form onsubmit="handleRegistration(event)">
+          <div class="form-group">
+            <label>Select DISCOM</label>
+            <select id="reg-discom" required style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+              <option value="cesc_mysore">CESC Mysore</option>
+              <option value="gulbarga_discom">Gulbarga DISCOM (GESCOM)</option>
+              <option value="mangalore_discom">Mangalore DISCOM (MESCOM)</option>
+              <option value="hubli_discom">Hubli DISCOM (HESCOM)</option>
+              <option value="bangalore_discom">Bangalore DISCOM (BESCOM)</option>
+            </select>
+            <div class="help">Select the electricity board for registration</div>
+          </div>
+          <div class="form-group">
+            <label>CA Numbers (one per line or comma-separated)</label>
+            <textarea id="reg-ca-numbers" placeholder="Enter CA numbers (one per line)&#10;Example:&#10;4906033486&#10;4906033487&#10;4906033488" required rows="5"></textarea>
+            <div class="help">Enter one or multiple CA numbers. Separate by new line or comma.</div>
+          </div>
+          
+          <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="text" id="reg-mobile" placeholder="Enter mobile number" required />
+            <div class="help">10-digit mobile number</div>
+          </div>
+          
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="reg-email" placeholder="abc@gmail.com" required />
+            <div class="help">Valid email address for account confirmation</div>
+          </div>
+          
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="reg-password" placeholder="Enter password" required />
+            <div class="help">Choose a strong password for your account</div>
+          </div>
+          
+          <div class="button-group">
+            <button type="submit" class="btn-primary" id="register-btn">🚀 Register Account</button>
+            <button type="reset" class="btn-secondary" onclick="resetRegistrationForm()">Clear</button>
+          </div>
+        </form>
+        
+        <div class="progress-container" id="progress-registration" style="display: none;">
+          <h3>Registration Progress</h3>
+          <div class="progress-bar"><div class="progress-fill" id="fill-registration"></div></div>
+          <div class="progress-text">
+            <span id="progress-text-registration">0%</span>
+            <span id="status-text-registration">Waiting...</span>
+          </div>
+          <div id="status-badge-registration"></div>
+          <div id="registration-summary" style="margin: 15px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; display: none;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">📊 Summary</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+              <div><strong>Total:</strong> <span id="summary-total">0</span></div>
+              <div style="color: #2e7d32;"><strong>✅ Success:</strong> <span id="summary-success">0</span></div>
+              <div style="color: #f57c00;"><strong>⚠️ Already Reg:</strong> <span id="summary-already">0</span></div>
+              <div style="color: #d32f2f;"><strong>❌ Errors:</strong> <span id="summary-errors">0</span></div>
+            </div>
+          </div>
+          
+          <!-- Detailed CA Number Lists -->
+          <div id="ca-details-section" style="margin: 15px 0; display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+              
+              <!-- Successful Registrations -->
+              <div id="success-ca-list" style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #2e7d32; display: flex; align-items: center;">
+                  <span style="margin-right: 8px;">✅</span> Successfully Registered
+                </h4>
+                <div id="success-ca-numbers" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                  <!-- Success CA numbers will be populated here -->
+                </div>
+              </div>
+              
+              <!-- Already Registered -->
+              <div id="already-ca-list" style="background: #fff3e0; border: 1px solid #ff9800; border-radius: 8px; padding: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #f57c00; display: flex; align-items: center;">
+                  <span style="margin-right: 8px;">⚠️</span> Already Registered
+                </h4>
+                <div id="already-ca-numbers" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                  <!-- Already registered CA numbers will be populated here -->
+                </div>
+              </div>
+              
+              <!-- Error Cases -->
+              <div id="error-ca-list" style="background: #ffebee; border: 1px solid #f44336; border-radius: 8px; padding: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #d32f2f; display: flex; align-items: center;">
+                  <span style="margin-right: 8px;">❌</span> Registration Errors
+                </h4>
+                <div id="error-ca-numbers" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                  <!-- Error CA numbers will be populated here -->
+                </div>
+              </div>
+              
+            </div>
+          </div>
+          <div class="logs" id="logs-registration"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    const API_URL = 'http://localhost:5000';
+
+
+    let boards = [];
+    let currentSessionId = null;
+    let statusCheckInterval = null;
+
+
+    async function initializeApp() {
+      const res = await fetch(`${API_URL}/boards`);
+      const data = await res.json();
+      boards = data.boards || [];
+      renderTabs();
+      loadTab(0);
+    }
+
+
+    function renderTabs() {
+      const tabContainer = document.getElementById('tabContainer');
+      tabContainer.innerHTML = boards.map((b, i) =>
+        `<button class="tab-btn ${i === 0 ? 'active' : ''}" onclick="loadTab(${i})">${b.icon} ${b.name}</button>`
+      ).join('');
+
+
+      const tabContents = document.getElementById('tabContents');
+      tabContents.innerHTML = boards.map((b, idx) => {
+        if (b.id === 'goa_discom') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="goa_discom">
+              <div class="board-header">🏖️ Goa DISCOM</div>
+              <form onsubmit="handleSubmit(event, 'goa_discom')">
+                <div class="form-group">
+                  <label>Login ID</label>
+                  <input type="text" id="goa-login-id" placeholder="Enter your login ID" required />
+                </div>
+                <div class="form-group">
+                  <label>Password</label>
+                  <input type="password" id="goa-password" placeholder="Enter your password" required />
+                </div>
+                <div class="form-group">
+                  <label>Bill Numbers (one per line)</label>
+                  <textarea id="goa-bill-numbers" placeholder="Enter bill numbers..." required></textarea>
+                  <div class="help">Bills will be automatically split by month</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-goa_discom">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-goa_discom"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-goa_discom">0%</span>
+                  <span id="status-text-goa_discom">Waiting...</span>
+                </div>
+                <div id="status-badge-goa_discom"></div>
+                <div class="download-section" id="download-section-goa_discom">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('goa_discom')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-goa_discom"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'dakshin_gujarat') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="dakshin_gujarat">
+              <div class="board-header">🌊 Dakshin Gujarat (DGVCL)</div>
+              <form onsubmit="handleSubmit(event, 'dakshin_gujarat')">
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-dakshin_gujarat" placeholder="Enter CA numbers..." required></textarea>
+                  <div class="help">Enter Consumer Account numbers, one per line. Captcha will be solved automatically.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-dakshin_gujarat">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-dakshin_gujarat"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-dakshin_gujarat">0%</span>
+                  <span id="status-text-dakshin_gujarat">Waiting...</span>
+                </div>
+                <div id="status-badge-dakshin_gujarat"></div>
+                <div class="download-section" id="download-section-dakshin_gujarat">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('dakshin_gujarat')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-dakshin_gujarat"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'apepdcl') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="apepdcl">
+              <div class="board-header">⚡ AP Eastern Power (APEPDCL)</div>
+              <form onsubmit="handleSubmit(event, 'apepdcl')">
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-apepdcl" placeholder="Enter CA numbers..." required></textarea>
+                  <div class="help">Enter Consumer Account numbers, one per line. Captcha will be solved automatically.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-apepdcl">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-apepdcl"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-apepdcl">0%</span>
+                  <span id="status-text-apepdcl">Waiting...</span>
+                </div>
+                <div id="status-badge-apepdcl"></div>
+                <div class="download-section" id="download-section-apepdcl">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('apepdcl')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-apepdcl"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'apcpdcl') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="apcpdcl">
+              <div class="board-header">⚡ AP Central Power (APCPDCL)</div>
+              <form onsubmit="handleSubmit(event, 'apcpdcl')">
+                <div class="form-group">
+                  <label>Bill Month (Optional)</label>
+                  <select id="apcpdcl-month">
+                    <option value="">Latest Available Month</option>
+                    <option value="DEC-2025">December 2025</option>
+                    <option value="NOV-2025">November 2025</option>
+                    <option value="OCT-2025">October 2025</option>
+                    <option value="SEP-2025">September 2025</option>
+                    <option value="AUG-2025">August 2025</option>
+                    <option value="JUL-2025">July 2025</option>
+                    <option value="JUN-2025">June 2025</option>
+                    <option value="MAY-2025">May 2025</option>
+                    <option value="APR-2025">April 2025</option>
+                    <option value="MAR-2025">March 2025</option>
+                    <option value="FEB-2025">February 2025</option>
+                    <option value="JAN-2025">January 2025</option>
+                    <option value="DEC-2024">December 2024</option>
+                    <option value="NOV-2024">November 2024</option>
+                    <option value="OCT-2024">October 2024</option>
+                  </select>
+                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                </div>
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-apcpdcl" placeholder="Enter CA numbers..." required></textarea>
+                  <div class="help">Enter Consumer Account numbers, one per line. The bot will find and click the Current Bill button for each month.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-apcpdcl">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-apcpdcl"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-apcpdcl">0%</span>
+                  <span id="status-text-apcpdcl">Waiting...</span>
+                </div>
+                <div id="status-badge-apcpdcl"></div>
+                <div class="download-section" id="download-section-apcpdcl">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('apcpdcl')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-apcpdcl"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'mp_poorva_kshetra') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="mp_poorva_kshetra">
+              <div class="board-header">🏛️ MP Poorva Kshetra</div>
+              <form onsubmit="handleSubmit(event, 'mp_poorva_kshetra')">
+                <div class="form-group">
+                  <label>Bill Month</label>
+                  <input type="month" id="mp-month" required />
+                  <div class="help">Select the month for which you want to download bills</div>
+                </div>
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-mp_poorva_kshetra" placeholder="Enter CA numbers (with or without N prefix)..." required></textarea>
+                  <div class="help">Enter CA/IVRS numbers, one per line. You can include 'N' prefix or not (e.g., N1152028048 or 1152028048)</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-mp_poorva_kshetra">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-mp_poorva_kshetra"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-mp_poorva_kshetra">0%</span>
+                  <span id="status-text-mp_poorva_kshetra">Waiting...</span>
+                </div>
+                <div id="status-badge-mp_poorva_kshetra"></div>
+                <div class="download-section" id="download-section-mp_poorva_kshetra">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('mp_poorva_kshetra')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-mp_poorva_kshetra"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'mp_madhya_kshetra') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="mp_madhya_kshetra">
+              <div class="board-header">🏛️ MP Madhya Kshetra</div>
+              <form onsubmit="handleSubmit(event, 'mp_madhya_kshetra')">
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-mp_madhya_kshetra" placeholder="Enter CA numbers..." required></textarea>
+                  <div class="help">Enter Consumer Account numbers, one per line. Bills will be downloaded automatically.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-mp_madhya_kshetra">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-mp_madhya_kshetra"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-mp_madhya_kshetra">0%</span>
+                  <span id="status-text-mp_madhya_kshetra">Waiting...</span>
+                </div>
+                <div id="status-badge-mp_madhya_kshetra"></div>
+                <div class="download-section" id="download-section-mp_madhya_kshetra">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('mp_madhya_kshetra')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-mp_madhya_kshetra"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'mp_paschim_kshetra') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="mp_paschim_kshetra">
+              <div class="board-header">🏛️ MP Paschim Kshetra</div>
+              <form onsubmit="handleSubmit(event, 'mp_paschim_kshetra')">
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-mp_paschim_kshetra" placeholder="Enter CA numbers..." required></textarea>
+                  <div class="help">Enter Consumer Account numbers, one per line. Bills will be downloaded automatically.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-mp_paschim_kshetra">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-mp_paschim_kshetra"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-mp_paschim_kshetra">0%</span>
+                  <span id="status-text-mp_paschim_kshetra">Waiting...</span>
+                </div>
+                <div id="status-badge-mp_paschim_kshetra"></div>
+                <div class="download-section" id="download-section-mp_paschim_kshetra">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('mp_paschim_kshetra')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-mp_paschim_kshetra"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'apspdcl') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="apspdcl">
+              <div class="board-header">⚡ AP Southern Power (APSPDCL)</div>
+              <form onsubmit="handleSubmit(event, 'apspdcl')">
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-apspdcl" placeholder="Enter CA numbers..." required></textarea>
+                  <div class="help">Enter Service numbers, one per line. Bills will be downloaded automatically.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-apspdcl">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-apspdcl"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-apspdcl">0%</span>
+                  <span id="status-text-apspdcl">Waiting...</span>
+                </div>
+                <div id="status-badge-apspdcl"></div>
+                <div class="download-section" id="download-section-apspdcl">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('apspdcl')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-apspdcl"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'kerala_kseb') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="kerala_kseb">
+              <div class="board-header">🌴 Kerala KSEB</div>
+              <form onsubmit="handleSubmit(event, 'kerala_kseb')">
+                <div class="form-group">
+                  <label>CA Number and Mobile Number (format: CA_NUMBER,MOBILE_NUMBER - one per line)</label>
+                  <textarea id="ca-kerala_kseb" placeholder="Example:&#10;1156808023972,9876543210&#10;1156808023973,9876543211" required></textarea>
+                  <div class="help">Enter CA number and mobile number separated by comma, one pair per line</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-kerala_kseb">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-kerala_kseb"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-kerala_kseb">0%</span>
+                  <span id="status-text-kerala_kseb">Waiting...</span>
+                </div>
+                <div id="status-badge-kerala_kseb"></div>
+                <div class="download-section" id="download-section-kerala_kseb">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('kerala_kseb')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-kerala_kseb"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'bescom') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="bescom">
+              <div class="board-header">🏭 BESCOM (Karnataka)</div>
+              <form onsubmit="handleSubmit(event, 'bescom')">
+                <div class="form-group">
+                  <label>Account Credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER - one per line)</label>
+                  <textarea id="ca-bescom" placeholder="Example:&#10;0990,Yes@123,CA123456789&#10;user2,pass2&#10;user3,pass3,CA987654321" required></textarea>
+                  <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
+                </div>
+                <div class="form-group">
+                  <label>Bill Month (Optional)</label>
+                  <input type="month" id="bescom-month" />
+                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                </div>
+                <div class="form-group">
+                  <label>Download Options</label>
+                  <select id="bescom-history">
+                    <option value="false">Latest Bill Only</option>
+                    <option value="true">All Available Bills</option>
+                  </select>
+                  <div class="help">Choose whether to download only the latest bill or all available bills for each account</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-bescom">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-bescom"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-bescom">0%</span>
+                  <span id="status-text-bescom">Waiting...</span>
+                </div>
+                <div id="status-badge-bescom"></div>
+                <div class="download-section" id="download-section-bescom">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('bescom')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-bescom"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'cescmysore') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="cescmysore">
+              <div class="board-header">🏢 CESC Mysore (Karnataka)</div>
+              <form onsubmit="handleSubmit(event, 'cescmysore')">
+                <div class="form-group">
+                  <label>Account Credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER - one per line)</label>
+                  <textarea id="ca-cescmysore" placeholder="Example:&#10;8752241000,ThinkW@123,8752241000&#10;user2,pass2&#10;user3,pass3,CA987654321" required></textarea>
+                  <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
+                </div>
+                <div class="form-group">
+                  <label>Bill Month (Optional)</label>
+                  <input type="month" id="cescmysore-month" />
+                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                </div>
+                <div class="form-group">
+                  <label>Download Options</label>
+                  <select id="cescmysore-history">
+                    <option value="false">Latest Bill Only</option>
+                    <option value="true">All Available Bills</option>
+                  </select>
+                  <div class="help">Choose whether to download only the latest bill or all available bills for each account</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-cescmysore">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-cescmysore"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-cescmysore">0%</span>
+                  <span id="status-text-cescmysore">Waiting...</span>
+                </div>
+                <div id="status-badge-cescmysore"></div>
+                <div class="download-section" id="download-section-cescmysore">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('cescmysore')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-cescmysore"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'gescom') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="gescom">
+              <div class="board-header">⚡ GESCOM (Karnataka)</div>
+              <form onsubmit="handleSubmit(event, 'gescom')">
+                <div class="form-group">
+                  <label>Account Credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER - one per line)</label>
+                  <textarea id="ca-gescom" placeholder="Example:&#10;username1,password1,CA123456789&#10;user2,pass2&#10;user3,pass3,CA987654321" required></textarea>
+                  <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
+                </div>
+                <div class="form-group">
+                  <label>Bill Month (Optional)</label>
+                  <input type="month" id="gescom-month" />
+                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                </div>
+                <div class="form-group">
+                  <label>Download Options</label>
+                  <select id="gescom-history">
+                    <option value="false">Latest Bill Only</option>
+                    <option value="true">All Available Bills</option>
+                  </select>
+                  <div class="help">Choose whether to download only the latest bill or all available bills for each account</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-gescom">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-gescom"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-gescom">0%</span>
+                  <span id="status-text-gescom">Waiting...</span>
+                </div>
+                <div id="status-badge-gescom"></div>
+                <div class="download-section" id="download-section-gescom">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('gescom')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-gescom"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'hescom') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="hescom">
+              <div class="board-header">🔌 HESCOM (Karnataka)</div>
+              <form onsubmit="handleSubmit(event, 'hescom')">
+                <div class="form-group">
+                  <label>Account Credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER - one per line)</label>
+                  <textarea id="ca-hescom" placeholder="Example:&#10;username1,password1,CA123456789&#10;user2,pass2&#10;user3,pass3,CA987654321" required></textarea>
+                  <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
+                </div>
+                <div class="form-group">
+                  <label>Bill Month (Optional)</label>
+                  <input type="month" id="hescom-month" />
+                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                </div>
+                <div class="form-group">
+                  <label>Download Options</label>
+                  <select id="hescom-history">
+                    <option value="false">Latest Bill Only</option>
+                    <option value="true">All Available Bills</option>
+                  </select>
+                  <div class="help">Choose whether to download only the latest bill or all available bills for each account</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-hescom">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-hescom"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-hescom">0%</span>
+                  <span id="status-text-hescom">Waiting...</span>
+                </div>
+                <div id="status-badge-hescom"></div>
+                <div class="download-section" id="download-section-hescom">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('hescom')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-hescom"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'mescom') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="mescom">
+              <div class="board-header">🏢 MESCOM (Karnataka)</div>
+              <form onsubmit="handleSubmit(event, 'mescom')">
+                <div class="form-group">
+                  <label>Account Credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER - one per line)</label>
+                  <textarea id="ca-mescom" placeholder="Example:&#10;username1,password1,CA123456789&#10;user2,pass2&#10;user3,pass3,CA987654321" required></textarea>
+                  <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded. Note: MESCOM does not require captcha solving.</div>
+                </div>
+                <div class="form-group">
+                  <label>Bill Month (Optional)</label>
+                  <input type="month" id="mescom-month" />
+                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                </div>
+                <div class="form-group">
+                  <label>Download Options</label>
+                  <select id="mescom-history">
+                    <option value="false">Latest Bill Only</option>
+                    <option value="true">All Available Bills</option>
+                  </select>
+                  <div class="help">Choose whether to download only the latest bill or all available bills for each account</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-mescom">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-mescom"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-mescom">0%</span>
+                  <span id="status-text-mescom">Waiting...</span>
+                </div>
+                <div id="status-badge-mescom"></div>
+                <div class="download-section" id="download-section-mescom">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('mescom')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-mescom"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'upcl_discom') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="upcl_discom">
+              <div class="board-header">⛰️ UPCL (Uttarakhand)</div>
+              <form onsubmit="handleSubmit(event, 'upcl_discom')">
+                <div class="form-group">
+                  <label>Account Numbers (one per line)</label>
+                  <textarea id="account-upcl_discom" placeholder="Enter account numbers..." required></textarea>
+                  <div class="help">Enter account numbers, one per line. Bills will be downloaded directly.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-upcl_discom">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-upcl_discom"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-upcl_discom">0%</span>
+                  <span id="status-text-upcl_discom">Waiting...</span>
+                </div>
+                <div id="status-badge-upcl_discom"></div>
+                <div class="download-section" id="download-section-upcl_discom">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('upcl_discom')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-upcl_discom"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'uppcl_discom') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="uppcl_discom">
+              <div class="board-header">⚡ UPPCL DISCOM (Uttar Pradesh)</div>
+              <form onsubmit="handleSubmit(event, 'uppcl_discom')">
+                <div class="form-group">
+                  <label>Select Board</label>
+                  <select id="uppcl-board">
+                    <option value="mvvnl">MVVNL (Madhyanchal Vidyut Vitran Nigam)</option>
+                    <option value="dvvnl">DVVNL (Dakshinanchal Vidyut Vitran Nigam)</option>
+                    <option value="pvvnl">PVVNL (Paschimanchal Vidyut Vitran Nigam)</option>
+                    <option value="pu">PU (Purvanchal Vidyut Vitran Nigam)</option>
+                    <option value="kesco">KESCO (Kanpur Electricity Supply Company)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Bill Month</label>
+                  <input type="month" id="uppcl-month" required />
+                  <div class="help">Select the month for which you want to download bills</div>
+                </div>
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-uppcl_discom" placeholder="Enter CA numbers..." required></textarea>
+                  <div class="help">Enter Consumer Account numbers, one per line</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-uppcl_discom">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-uppcl_discom"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-uppcl_discom">0%</span>
+                  <span id="status-text-uppcl_discom">Waiting...</span>
+                </div>
+                <div id="status-badge-uppcl_discom"></div>
+                <div class="download-section" id="download-section-uppcl_discom">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('uppcl_discom')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-uppcl_discom"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'msedcl') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="msedcl">
+              <div class="board-header">🇮🇳 MSEDCL (Maharashtra)</div>
+              <form onsubmit="handleSubmit(event, 'msedcl')">
+                <div class="form-group">
+                  <label>Mode</label>
+                  <select id="msedcl-mode" onchange="toggleMsedclInputs()">
+                    <option value="LT">LT Bill (CA + Month)</option>
+                    <option value="HT">HT Bill (CA + Month + Cookie)</option>
+                    <option value="HT2">HT2 Bill (CA ↔ BU + Month)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Bill Month Type</label>
+                  <select id="msedcl-month-type" onchange="toggleMsedclMonthInputs()">
+                    <option value="single">Single Month</option>
+                    <option value="range">Month Range</option>
+                  </select>
+                </div>
+                <div class="form-group" id="msedcl-single-month">
+                  <label>Bill Month (e.g. Sep 2025)</label>
+                  <input type="text" id="bill-month" value="Sep 2025" />
+                </div>
+                <div class="form-group" id="msedcl-month-range" style="display:none;">
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">From Month</label>
+                      <input type="text" id="bill-month-from" placeholder="Jan 2025" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">To Month</label>
+                      <input type="text" id="bill-month-to" placeholder="Dec 2025" />
+                    </div>
+                  </div>
+                  <div class="help">Format: Jan 2025, Feb 2025, etc. Range will include all months between from and to.</div>
+                </div>
+                <div class="form-group" id="msedcl-ca-wrap">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-msedcl" placeholder="Enter CA numbers..."></textarea>
+                </div>
+                <div class="form-group" id="msedcl-cookie-wrap" style="display:none;">
+                  <label>Cookie (valid for ~15 min)</label>
+                  <textarea id="cookie-msedcl" placeholder="Paste Cookie header from wss.mahadiscom.in"></textarea>
+                  <div class="help">Example: <code>WSSCOOKIE=...; ASP.NET_SessionId=...; _ga=...</code></div>
+                </div>
+                <div class="form-group" id="msedcl-bu-wrap" style="display:none;">
+                  <label>CA ↔ BU Mapping (one per line as <code>CA: BU</code>)</label>
+                  <textarea id="bu-map" placeholder="170019088370: 517"></textarea>
+                  <div class="help">Required for HT2 only.</div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary" onclick="resetMsedcl()">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-msedcl">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-msedcl"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-msedcl">0%</span>
+                  <span id="status-text-msedcl">Waiting...</span>
+                </div>
+                <div id="status-badge-msedcl"></div>
+                <div class="download-section" id="download-section-msedcl">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('msedcl')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-msedcl"></div>
+              </div>
+            </div>`;
+        } else if (b.id === 'jharkhand') {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="jharkhand">
+              <div class="board-header">🔌 Jharkhand (JBVNL)</div>
+              <form onsubmit="handleSubmit(event, 'jharkhand')">
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-jharkhand" placeholder="Enter CA numbers..." required></textarea>
+                </div>
+                <div class="form-group">
+                  <label>📅 Bill Month Range</label>
+                  <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                      <label style="font-size: 12px; color: #666;">From Month</label>
+                      <select id="from-month-jharkhand" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08" selected>August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                      </select>
+                    </div>
+                    <div style="flex: 1;">
+                      <label style="font-size: 12px; color: #666;">From Year</label>
+                      <select id="from-year-jharkhand" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025" selected>2025</option>
+                        <option value="2026">2026</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                      <label style="font-size: 12px; color: #666;">To Month</label>
+                      <select id="to-month-jharkhand" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11" selected>November</option>
+                        <option value="12">December</option>
+                      </select>
+                    </div>
+                    <div style="flex: 1;">
+                      <label style="font-size: 12px; color: #666;">To Year</label>
+                      <select id="to-year-jharkhand" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025" selected>2025</option>
+                        <option value="2026">2026</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="margin-bottom: 10px;">
+                    <button type="button" onclick="generateJharkhandMonths()" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🔄 Generate Month List</button>
+                  </div>
+                  <div class="form-group">
+                    <label>Generated Months (MMYYYY format)</label>
+                    <textarea id="months-jharkhand" placeholder="082025" style="height: 80px;">082025</textarea>
+                    <div class="help">Auto-generated from range above, or manually edit. Example: 082025 for Aug 2025</div>
+                  </div>
+                </div>
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-jharkhand">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-jharkhand"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-jharkhand">0%</span>
+                  <span id="status-text-jharkhand">Waiting...</span>
+                </div>
+                <div id="status-badge-jharkhand"></div>
+                <div class="download-section" id="download-section-jharkhand">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('jharkhand')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-jharkhand"></div>
+              </div>
+            </div>`;
+        } else {
+          return `
+            <div class="tab-content ${idx === 0 ? 'active' : ''}" data-board="${b.id}">
+              <div class="board-header">${b.icon} ${b.name}</div>
+              <form onsubmit="handleSubmit(event, '${b.id}')">
+                <div class="form-group">
+                  <label>CA Numbers (one per line)</label>
+                  <textarea id="ca-${b.id}" placeholder="Enter CA numbers..." required></textarea>
+                </div>
+                ${b.has_months ? `
+                  <div class="form-group">
+                    <label>Months (MMYYYY format, one per line)</label>
+                    <textarea id="months-${b.id}" placeholder="092025">092025</textarea>
+                    <div class="help">Example: 092025 for Sep 2025, 082025 for Aug 2025</div>
+                  </div>` : ''}
+                <div class="button-group">
+                  <button type="submit" class="btn-primary">⬇️ Download</button>
+                  <button type="reset" class="btn-secondary">Clear</button>
+                </div>
+              </form>
+              <div class="progress-container" id="progress-${b.id}">
+                <h3>Progress</h3>
+                <div class="progress-bar"><div class="progress-fill" id="fill-${b.id}"></div></div>
+                <div class="progress-text">
+                  <span id="progress-text-${b.id}">0%</span>
+                  <span id="status-text-${b.id}">Waiting...</span>
+                </div>
+                <div id="status-badge-${b.id}"></div>
+                <div class="download-section" id="download-section-${b.id}">
+                  <h3>✅ Ready to Download</h3>
+                  <p>Click below to download all bills as ZIP</p>
+                  <button class="btn-primary" onclick="downloadZip('${b.id}')" style="width:100%; margin-top:10px;">📥 Download All Bills (ZIP)</button>
+                </div>
+                <div class="logs" id="logs-${b.id}"></div>
+              </div>
+            </div>`;
+        }
+      }).join('');
+    }
+
+
+    function generateJharkhandMonths() {
+      const fromMonth = parseInt(document.getElementById('from-month-jharkhand').value);
+      const fromYear = parseInt(document.getElementById('from-year-jharkhand').value);
+      const toMonth = parseInt(document.getElementById('to-month-jharkhand').value);
+      const toYear = parseInt(document.getElementById('to-year-jharkhand').value);
+      
+      const months = [];
+      let currentMonth = fromMonth;
+      let currentYear = fromYear;
+      
+      // Generate months from start to end
+      while (currentYear < toYear || (currentYear === toYear && currentMonth <= toMonth)) {
+        const monthStr = currentMonth.toString().padStart(2, '0');
+        const yearStr = currentYear.toString();
+        months.push(monthStr + yearStr);
+        
+        currentMonth++;
+        if (currentMonth > 12) {
+          currentMonth = 1;
+          currentYear++;
+        }
+      }
+      
+      // Update the textarea
+      document.getElementById('months-jharkhand').value = months.join('\n');
+      
+      // Show a brief success message
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = '✅ Generated!';
+      button.style.background = '#28a745';
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = '#007bff';
+      }, 1500);
+    }
+
+    function loadTab(i) {
+      // Only target DISCOM tab buttons (inside tabContainer) and tab contents
+      const tabContainer = document.getElementById('tabContainer');
+      const tabContents = document.getElementById('tabContents');
+      
+      // Remove active class from DISCOM tab buttons only
+      tabContainer.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      // Remove active class from all tab contents
+      tabContents.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      // Add active class to the correct DISCOM tab button
+      const discomTabButtons = tabContainer.querySelectorAll('.tab-btn');
+      if (discomTabButtons[i]) {
+        discomTabButtons[i].classList.add('active');
+      }
+      
+      // Add active class to the correct tab content using data-board attribute
+      const boardId = boards[i]?.id;
+      if (boardId) {
+        const targetContent = tabContents.querySelector(`[data-board="${boardId}"]`);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+      }
+    }
+
+
+    function toggleMsedclInputs() {
+      const mode = document.getElementById('msedcl-mode').value;
+      document.getElementById('msedcl-cookie-wrap').style.display = (mode === 'HT') ? 'block' : 'none';
+      document.getElementById('msedcl-bu-wrap').style.display = (mode === 'HT2') ? 'block' : 'none';
+      document.getElementById('msedcl-ca-wrap').style.display = (mode === 'HT2') ? 'none' : 'block';
+    }
+    
+    function toggleMsedclMonthInputs() {
+      const monthType = document.getElementById('msedcl-month-type').value;
+      document.getElementById('msedcl-single-month').style.display = (monthType === 'single') ? 'block' : 'none';
+      document.getElementById('msedcl-month-range').style.display = (monthType === 'range') ? 'block' : 'none';
+    }
+    
+    function generateMonthRange(fromMonth, toMonth) {
+      try {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        // Parse from month
+        const fromParts = fromMonth.split(' ');
+        const fromMonthName = fromParts[0];
+        const fromYear = parseInt(fromParts[1]);
+        const fromMonthIndex = monthNames.indexOf(fromMonthName);
+        
+        // Parse to month
+        const toParts = toMonth.split(' ');
+        const toMonthName = toParts[0];
+        const toYear = parseInt(toParts[1]);
+        const toMonthIndex = monthNames.indexOf(toMonthName);
+        
+        if (fromMonthIndex === -1 || toMonthIndex === -1 || isNaN(fromYear) || isNaN(toYear)) {
+          return [];
+        }
+        
+        const months = [];
+        let currentYear = fromYear;
+        let currentMonthIndex = fromMonthIndex;
+        
+        while (currentYear < toYear || (currentYear === toYear && currentMonthIndex <= toMonthIndex)) {
+          months.push(`${monthNames[currentMonthIndex]} ${currentYear}`);
+          currentMonthIndex++;
+          if (currentMonthIndex > 11) {
+            currentMonthIndex = 0;
+            currentYear++;
+          }
+        }
+        
+        return months;
+      } catch (e) {
+        return [];
+      }
+    }
+    
+    function resetMsedcl() {
+      document.getElementById('msedcl-mode').value = 'LT';
+      document.getElementById('msedcl-month-type').value = 'single';
+      document.getElementById('bill-month').value = 'Sep 2025';
+      document.getElementById('bill-month-from').value = '';
+      document.getElementById('bill-month-to').value = '';
+      document.getElementById('ca-msedcl').value = '';
+      document.getElementById('cookie-msedcl').value = '';
+      document.getElementById('bu-map').value = '';
+      toggleMsedclInputs();
+      toggleMsedclMonthInputs();
+    }
+
+
+    async function handleSubmit(e, boardId) {
+      e.preventDefault();
+      let payload = { board: boardId };
+
+
+      if (boardId === 'goa_discom') {
+        const loginId = (document.getElementById('goa-login-id').value || '').trim();
+        const password = (document.getElementById('goa-password').value || '').trim();
+        const billNumbers = (document.getElementById('goa-bill-numbers').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+
+        if (!loginId || !password) {
+          alert('Please enter login ID and password');
+          return;
+        }
+        if (billNumbers.length === 0) {
+          alert('Please enter at least one bill number');
+          return;
+        }
+
+
+        payload.login_id = loginId;
+        payload.password = password;
+        payload.bill_numbers = billNumbers;
+      } else if (boardId === 'mp_poorva_kshetra') {
+        const bill_month = (document.getElementById('mp-month').value || '').trim();
+        const cas = (document.getElementById('ca-mp_poorva_kshetra').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+
+        if (!bill_month) {
+          alert('Please select bill month');
+          return;
+        }
+        if (cas.length === 0) {
+          alert('Please enter at least one CA number');
+          return;
+        }
+
+
+        payload.bill_month = bill_month;
+        payload.ca_numbers = cas;
+      } else if (boardId === 'upcl_discom') {
+        const accountNumbers = (document.getElementById('account-upcl_discom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+
+        if (accountNumbers.length === 0) {
+          alert('Please enter at least one account number');
+          return;
+        }
+
+
+        payload.account_numbers = accountNumbers;
+      } else if (boardId === 'uppcl_discom') {
+        const uppcl_board = (document.getElementById('uppcl-board').value || '').trim();
+        const bill_month = (document.getElementById('uppcl-month').value || '').trim();
+        const cas = (document.getElementById('ca-uppcl_discom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+
+        if (!bill_month) {
+          alert('Please select bill month');
+          return;
+        }
+        if (cas.length === 0) {
+          alert('Please enter at least one CA number');
+          return;
+        }
+
+
+        payload.uppcl_board = uppcl_board;
+        payload.bill_month = bill_month;
+        payload.ca_numbers = cas;
+      } else if (boardId === 'msedcl') {
+        const mode = document.getElementById('msedcl-mode').value;
+        const monthType = document.getElementById('msedcl-month-type').value;
+        
+        let billMonths = [];
+        if (monthType === 'single') {
+          const billMonth = (document.getElementById('bill-month').value || '').trim();
+          if (!billMonth) {
+            alert('Please enter bill month');
+            return;
+          }
+          billMonths = [billMonth];
+        } else {
+          const fromMonth = (document.getElementById('bill-month-from').value || '').trim();
+          const toMonth = (document.getElementById('bill-month-to').value || '').trim();
+          if (!fromMonth || !toMonth) {
+            alert('Please enter both from and to months for range');
+            return;
+          }
+          billMonths = generateMonthRange(fromMonth, toMonth);
+          if (billMonths.length === 0) {
+            alert('Invalid month range. Please check the format (e.g., Jan 2025, Feb 2025)');
+            return;
+          }
+        }
+        
+        payload.msedcl_mode = mode;
+        payload.bill_months = billMonths;
+
+
+        if (mode === 'HT2') {
+          const lines = (document.getElementById('bu-map').value || '').split('\n').map(s => s.trim()).filter(Boolean);
+          const buMap = {}; const cas = [];
+          for (const line of lines) {
+            const m = line.match(/^(\d+)\s*:\s*(\d+)$/);
+            if (m) { buMap[m[1]] = m[2]; cas.push(m[1]); }
+          }
+          if (cas.length === 0) { alert('Please enter CA ↔ BU mapping like "170019088370: 517".'); return; }
+          payload.bu_map = buMap;
+          payload.ca_numbers = cas;
+        } else {
+          const cas = (document.getElementById('ca-msedcl').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+          if (cas.length === 0) { alert('Please enter at least one CA number'); return; }
+          payload.ca_numbers = cas;
+          if (mode === 'HT') {
+            const ck = (document.getElementById('cookie-msedcl').value || '').trim();
+            if (!ck) { alert('Cookie is required for HT'); return; }
+            payload.cookie = ck;
+          }
+        }
+      } else if (boardId === 'kerala_kseb') {
+        const lines = (document.getElementById('ca-kerala_kseb').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        const ca_mobile_pairs = [];
+        
+        for (const line of lines) {
+          const parts = line.split(',').map(p => p.trim());
+          if (parts.length === 2) {
+            ca_mobile_pairs.push({
+              ca_number: parts[0],
+              mobile_number: parts[1]
+            });
+          }
+        }
+        
+        if (ca_mobile_pairs.length === 0) {
+          alert('Please enter at least one CA number and mobile number pair (format: CA_NUMBER,MOBILE_NUMBER)');
+          return;
+        }
+        
+        payload.ca_mobile_pairs = ca_mobile_pairs;
+      } else if (boardId === 'apcpdcl') {
+        const cas = (document.getElementById('ca-apcpdcl').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        const bill_month = (document.getElementById('apcpdcl-month').value || '').trim();
+        
+        if (cas.length === 0) {
+          alert('Please enter at least one CA number');
+          return;
+        }
+        
+        payload.ca_numbers = cas;
+        if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+      } else if (boardId === 'bescom') {
+        const credentials = (document.getElementById('ca-bescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        let bill_month = (document.getElementById('bescom-month').value || '').trim();
+        const fetch_history = document.getElementById('bescom-history').value === 'true';
+        
+        // Convert month input format (YYYY-MM) to BESCOM format (MON-YYYY)
+        if (bill_month) {
+          const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                             'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const [year, month] = bill_month.split('-');
+          const monthIndex = parseInt(month) - 1;
+          bill_month = `${monthNames[monthIndex]}-${year}`;
+        }
+        
+        if (credentials.length === 0) {
+          alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
+          return;
+        }
+        
+        // Validate credential format
+        for (const cred of credentials) {
+          const parts = cred.split(',').map(p => p.trim());
+          if (parts.length < 2) {
+            alert('Invalid credential format. Each line should contain at least USERNAME,PASSWORD');
+            return;
+          }
+        }
+        
+        payload.ca_numbers = credentials;
+        if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'cescmysore') {
+        const credentials = (document.getElementById('ca-cescmysore').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        let bill_month = (document.getElementById('cescmysore-month').value || '').trim();
+        const fetch_history = document.getElementById('cescmysore-history').value === 'true';
+        
+        // Convert month input format (YYYY-MM) to CESC Mysore format (MON-YYYY)
+        if (bill_month) {
+          const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                             'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const [year, month] = bill_month.split('-');
+          const monthIndex = parseInt(month) - 1;
+          bill_month = `${monthNames[monthIndex]}-${year}`;
+        }
+        
+        if (credentials.length === 0) {
+          alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
+          return;
+        }
+        
+        // Validate credential format
+        for (const cred of credentials) {
+          const parts = cred.split(',').map(p => p.trim());
+          if (parts.length < 2) {
+            alert('Invalid credential format. Each line should contain at least USERNAME,PASSWORD');
+            return;
+          }
+        }
+        
+        payload.ca_numbers = credentials;
+        if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'gescom') {
+        const credentials = (document.getElementById('ca-gescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        let bill_month = (document.getElementById('gescom-month').value || '').trim();
+        const fetch_history = document.getElementById('gescom-history').value === 'true';
+        
+        // Convert month input format (YYYY-MM) to GESCOM format (MON-YYYY)
+        if (bill_month) {
+          const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                             'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const [year, month] = bill_month.split('-');
+          const monthIndex = parseInt(month) - 1;
+          bill_month = `${monthNames[monthIndex]}-${year}`;
+        }
+        
+        if (credentials.length === 0) {
+          alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
+          return;
+        }
+        
+        // Validate credential format
+        for (const cred of credentials) {
+          const parts = cred.split(',').map(p => p.trim());
+          if (parts.length < 2) {
+            alert('Invalid credential format. Each line should contain at least USERNAME,PASSWORD');
+            return;
+          }
+        }
+        
+        payload.ca_numbers = credentials;
+        if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'hescom') {
+        const credentials = (document.getElementById('ca-hescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        let bill_month = (document.getElementById('hescom-month').value || '').trim();
+        const fetch_history = document.getElementById('hescom-history').value === 'true';
+        
+        // Convert month input format (YYYY-MM) to HESCOM format (MON-YYYY)
+        if (bill_month) {
+          const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                             'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const [year, month] = bill_month.split('-');
+          const monthIndex = parseInt(month) - 1;
+          bill_month = `${monthNames[monthIndex]}-${year}`;
+        }
+        
+        if (credentials.length === 0) {
+          alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
+          return;
+        }
+        
+        // Validate credential format
+        for (const cred of credentials) {
+          const parts = cred.split(',').map(p => p.trim());
+          if (parts.length < 2) {
+            alert('Invalid credential format. Each line should contain at least USERNAME,PASSWORD');
+            return;
+          }
+        }
+        
+        payload.ca_numbers = credentials;
+        if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'mescom') {
+        const credentials = (document.getElementById('ca-mescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        let bill_month = (document.getElementById('mescom-month').value || '').trim();
+        const fetch_history = document.getElementById('mescom-history').value === 'true';
+        
+        // Convert month input format (YYYY-MM) to MESCOM format (MON-YYYY)
+        if (bill_month) {
+          const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                             'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const [year, month] = bill_month.split('-');
+          const monthIndex = parseInt(month) - 1;
+          bill_month = `${monthNames[monthIndex]}-${year}`;
+        }
+        
+        if (credentials.length === 0) {
+          alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
+          return;
+        }
+        
+        // Validate credential format
+        for (const cred of credentials) {
+          const parts = cred.split(',').map(p => p.trim());
+          if (parts.length < 2) {
+            alert('Invalid credential format. Each line should contain at least USERNAME,PASSWORD');
+            return;
+          }
+        }
+        
+        payload.ca_numbers = credentials;
+        if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        payload.fetch_history = fetch_history;
+      } else {
+        const cas = (document.getElementById(`ca-${boardId}`).value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        if (cas.length === 0) { alert('Please enter at least one CA number'); return; }
+        payload.ca_numbers = cas;
+
+
+        if (boardId === 'chandigarh') {
+          const months = (document.getElementById(`months-${boardId}`).value || '')
+            .split('\n').map(s => s.trim()).filter(Boolean);
+          payload.months = months.length ? months : ['092025'];
+        } else if (boardId === 'jharkhand') {
+          const months = (document.getElementById(`months-${boardId}`).value || '')
+            .split('\n').map(s => s.trim()).filter(Boolean);
+          payload.months = months.length ? months : ['082025'];
+        } else if (boardId === 'ndmc') {
+          const months = (document.getElementById(`months-${boardId}`).value || '')
+            .split('\n').map(s => s.trim()).filter(Boolean);
+          payload.months = months.length ? months : ['012025'];
+        }
+      }
+
+
+      const res = await fetch(`${API_URL}/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'Request failed'); return; }
+
+
+      currentSessionId = data.session_id;
+      document.getElementById(`progress-${boardId}`).style.display = 'block';
+      const dl = document.getElementById(`download-section-${boardId}`);
+      if (dl) dl.style.display = 'none';
+      startStatusCheck(boardId);
+    }
+
+
+    function startStatusCheck(boardId) {
+      if (statusCheckInterval) clearInterval(statusCheckInterval);
+      statusCheckInterval = setInterval(async () => {
+        if (!currentSessionId) return;
+        const res = await fetch(`${API_URL}/status/${currentSessionId}`);
+        const status = await res.json();
+
+
+        const fill = document.getElementById(`fill-${boardId}`);
+        const ptxt = document.getElementById(`progress-text-${boardId}`);
+        const stxt = document.getElementById(`status-text-${boardId}`);
+        const sbadge = document.getElementById(`status-badge-${boardId}`);
+        const logs = document.getElementById(`logs-${boardId}`);
+        const dl = document.getElementById(`download-section-${boardId}`);
+
+
+        fill.style.width = `${status.progress || 0}%`;
+        ptxt.textContent = `${status.progress || 0}%`;
+        stxt.textContent = `${status.completed || 0}/${status.total || 0}`;
+
+
+        const cls = `status-${status.status}`;
+        sbadge.innerHTML = `<div class="status-badge ${cls}">${(status.status || '').toUpperCase()}</div>`;
+
+
+        logs.innerHTML = (status.logs || []).map(l => {
+          const ok = l.includes('✓');
+          return `<div class="log-item ${ok ? 'success' : 'error'}">${l}</div>`;
+        }).join('');
+        logs.scrollTop = logs.scrollHeight;
+
+
+        if (status.status === 'completed') {
+          clearInterval(statusCheckInterval);
+          if ((status.file_count || 0) > 0) {
+            updateDownloadSection(boardId, status.file_list || []);
+            dl.style.display = 'block';
+          }
+        }
+      }, 600);
+    }
+
+
+    function downloadZip(boardId) {
+      if (!currentSessionId) { alert('No session found'); return; }
+      const url = `${API_URL}/download/${currentSessionId}`;
+      const a = document.createElement('a');
+      a.href = url; a.download = `bills_${currentSessionId.substring(0, 8)}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    function downloadSingleFile(filename) {
+      if (!currentSessionId) { alert('No session found'); return; }
+      const url = `${API_URL}/download/${currentSessionId}/${encodeURIComponent(filename)}`;
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function updateDownloadSection(boardId, fileList) {
+      const dl = document.getElementById(`download-section-${boardId}`);
+      if (!dl) return;
+
+      // Clear existing content and rebuild
+      const fileListHtml = fileList.map(file => `
+        <div class="file-item">
+          <div class="file-info">
+            <div class="file-name">📄 ${file.name}</div>
+            <div class="file-size">${formatFileSize(file.size)}</div>
+          </div>
+          <button class="btn-download-single" onclick="downloadSingleFile('${file.name.replace(/'/g, "\\'")}')">
+            📥 Download
+          </button>
+        </div>
+      `).join('');
+
+      dl.innerHTML = `
+        <h3>✅ Downloaded Bills (${fileList.length})</h3>
+        <div class="file-list">${fileListHtml}</div>
+        <button class="btn-primary" onclick="downloadZip('${boardId}')" style="width:100%; margin-top:15px;">
+          📦 Download All as ZIP
+        </button>
+      `;
+    }
+
+
+    function switchMainSection(section) {
+      const downloaderSection = document.getElementById('downloader-section');
+      const registrationSection = document.getElementById('registration-section');
+      const mainTabs = document.querySelectorAll('.container > .tabs > .tab-btn');
+      
+      if (section === 'downloader') {
+        downloaderSection.style.display = 'block';
+        registrationSection.style.display = 'none';
+        mainTabs[0].classList.add('active');
+        mainTabs[1].classList.remove('active');
+      } else {
+        downloaderSection.style.display = 'none';
+        registrationSection.style.display = 'block';
+        mainTabs[0].classList.remove('active');
+        mainTabs[1].classList.add('active');
+        
+        // Check backend status when switching to registration
+        checkBackendStatus();
+      }
+    }
+
+    async function checkBackendStatus() {
+      const statusDiv = document.getElementById('backend-status');
+      try {
+        const res = await fetch(`${API_URL}/boards`, { method: 'GET' });
+        if (res.ok) {
+          statusDiv.style.display = 'none';
+          statusDiv.style.background = '#e8f5e9';
+          statusDiv.style.color = '#2e7d32';
+          statusDiv.innerHTML = '<strong>✅ Backend Connected</strong>';
+        } else {
+          throw new Error('Backend not responding');
+        }
+      } catch (error) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#fff3e0';
+        statusDiv.style.color = '#e65100';
+      }
+    }
+
+    async function handleRegistration(e) {
+      e.preventDefault();
+      console.log('Registration form submitted');
+      
+      // Disable the button to prevent double submission
+      const submitBtn = document.getElementById('register-btn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '⏳ Processing...';
+      
+      const discom = document.getElementById('reg-discom').value;
+      const caNumbers = document.getElementById('reg-ca-numbers').value.trim();
+      const mobile = document.getElementById('reg-mobile').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      
+      console.log('Form values:', { discom, caNumbers: caNumbers.substring(0, 50) + '...', mobile, email, password: '***' });
+      
+      if (!caNumbers || !mobile || !email || !password) {
+        alert('Please fill all fields');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        return;
+      }
+      
+      // Count CA numbers
+      const caList = caNumbers.split(/[\n,]+/).map(ca => ca.trim()).filter(ca => ca);
+      if (caList.length === 0) {
+        alert('Please enter at least one CA number');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        return;
+      }
+      
+      // Confirm if multiple CA numbers
+      const discomNames = {
+        'cesc_mysore': 'CESC Mysore',
+        'gulbarga_discom': 'Gulbarga DISCOM (GESCOM)',
+        'mangalore_discom': 'Mangalore DISCOM (MESCOM)',
+        'hubli_discom': 'Hubli DISCOM (HESCOM)',
+        'bangalore_discom': 'Bangalore DISCOM (BESCOM)'
+      };
+      const discomName = discomNames[discom] || 'Selected DISCOM';
+      
+      if (caList.length > 1) {
+        const confirmed = confirm(`You are about to register ${caList.length} CA numbers on ${discomName}. Continue?`);
+        if (!confirmed) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+          return;
+        }
+      }
+      
+      const payload = {
+        ca_numbers: caNumbers,
+        mobile_number: mobile,
+        email: email,
+        password: password
+      };
+      
+      // Determine endpoint based on selected DISCOM
+      const endpoints = {
+        'cesc_mysore': '/register/cesc_mysore',
+        'gulbarga_discom': '/register/gulbarga_discom',
+        'mangalore_discom': '/register/mangalore_discom',
+        'hubli_discom': '/register/hubli_discom',
+        'bangalore_discom': '/register/bangalore_discom'
+      };
+      const endpoint = endpoints[discom] || '/register/cesc_mysore';
+      const apiUrl = `${API_URL}${endpoint}`;
+      
+      console.log('Sending registration request to:', apiUrl);
+      console.log('Total CA numbers:', caList.length);
+      
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        console.log('Response status:', res.status);
+        const data = await res.json();
+        console.log('Response data:', data);
+        
+        if (!res.ok) {
+          alert(data.error || 'Registration failed');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+          return;
+        }
+        
+        currentSessionId = data.session_id;
+        document.getElementById('progress-registration').style.display = 'block';
+        submitBtn.innerHTML = `✅ Started (${data.total_ca_numbers || caList.length} CA numbers)`;
+        startRegistrationStatusCheck();
+      } catch (error) {
+        console.error('Registration error:', error);
+        alert('Failed to connect to server. Please ensure the backend is running at http://localhost:5000');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+
+    function startRegistrationStatusCheck() {
+      if (statusCheckInterval) clearInterval(statusCheckInterval);
+      statusCheckInterval = setInterval(async () => {
+        if (!currentSessionId) return;
+        const res = await fetch(`${API_URL}/status/${currentSessionId}`);
+        const status = await res.json();
+
+        const fill = document.getElementById('fill-registration');
+        const ptxt = document.getElementById('progress-text-registration');
+        const stxt = document.getElementById('status-text-registration');
+        const sbadge = document.getElementById('status-badge-registration');
+        const logs = document.getElementById('logs-registration');
+        const summaryDiv = document.getElementById('registration-summary');
+        const submitBtn = document.getElementById('register-btn');
+
+        fill.style.width = `${status.progress || 0}%`;
+        ptxt.textContent = `${status.progress || 0}%`;
+        stxt.textContent = `${status.completed || 0}/${status.total || 0} CA numbers`;
+
+        const cls = `status-${status.status}`;
+        sbadge.innerHTML = `<div class="status-badge ${cls}">${(status.status || '').toUpperCase()}</div>`;
+
+        // Update summary if results are available
+        if (status.results && Object.keys(status.results).length > 0) {
+          summaryDiv.style.display = 'block';
+          const results = status.results;
+          const total = Object.keys(results).length;
+          const success = Object.values(results).filter(r => r === 'success').length;
+          const already = Object.values(results).filter(r => r === 'already_registered').length;
+          const errors = total - success - already;
+          
+          document.getElementById('summary-total').textContent = total;
+          document.getElementById('summary-success').textContent = success;
+          document.getElementById('summary-already').textContent = already;
+          document.getElementById('summary-errors').textContent = errors;
+          
+          // Update detailed CA number lists
+          updateCANumberLists(results);
+        }
+
+        logs.innerHTML = (status.logs || []).map(l => {
+          const isSuccess = l.includes('✓') || l.includes('✅') || l.includes('🎉');
+          const isWarning = l.includes('⚠️');
+          const isError = l.includes('✗') || l.includes('❌');
+          const isSeparator = l.includes('===');
+          let className = '';
+          if (isSuccess) className = 'success';
+          else if (isError) className = 'error';
+          
+          // Style separator lines
+          if (isSeparator) {
+            return `<div class="log-item" style="color: #999; font-weight: bold; border-bottom: 2px solid #e0e0e0; padding: 8px 0;">${l}</div>`;
+          }
+          
+          return `<div class="log-item ${className}">${l}</div>`;
+        }).join('');
+        logs.scrollTop = logs.scrollHeight;
+
+        if (status.status === 'completed' || status.status === 'error') {
+          clearInterval(statusCheckInterval);
+          
+          // Re-enable the button and reset text
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '🚀 Register Account';
+          }
+          
+          // Show completion message
+          if (status.status === 'completed') {
+            const totalResults = status.results ? Object.keys(status.results).length : 0;
+            if (totalResults > 0) {
+              alert(`✅ Batch registration completed!\n\nCheck the summary and logs for details.`);
+            }
+          }
+        }
+      }, 600);
+    }
+
+    function updateCANumberLists(results) {
+      // Show the CA details section
+      document.getElementById('ca-details-section').style.display = 'block';
+      
+      // Categorize CA numbers by status
+      const successCAs = [];
+      const alreadyCAs = [];
+      const errorCAs = [];
+      
+      for (const [caNumber, status] of Object.entries(results)) {
+        if (status === 'success') {
+          successCAs.push(caNumber);
+        } else if (status === 'already_registered') {
+          alreadyCAs.push(caNumber);
+        } else {
+          errorCAs.push(caNumber);
+        }
+      }
+      
+      // Update Success list
+      const successDiv = document.getElementById('success-ca-numbers');
+      if (successCAs.length > 0) {
+        successDiv.innerHTML = successCAs.map(ca => 
+          `<div style="padding: 4px 8px; margin: 2px 0; background: #c8e6c9; border-radius: 4px; color: #2e7d32;">${ca}</div>`
+        ).join('');
+      } else {
+        successDiv.innerHTML = '<div style="color: #999; font-style: italic;">No successful registrations</div>';
+      }
+      
+      // Update Already Registered list
+      const alreadyDiv = document.getElementById('already-ca-numbers');
+      if (alreadyCAs.length > 0) {
+        alreadyDiv.innerHTML = alreadyCAs.map(ca => 
+          `<div style="padding: 4px 8px; margin: 2px 0; background: #ffe0b2; border-radius: 4px; color: #f57c00;">${ca}</div>`
+        ).join('');
+      } else {
+        alreadyDiv.innerHTML = '<div style="color: #999; font-style: italic;">No already registered CA numbers</div>';
+      }
+      
+      // Update Error list
+      const errorDiv = document.getElementById('error-ca-numbers');
+      if (errorCAs.length > 0) {
+        errorDiv.innerHTML = errorCAs.map(ca => 
+          `<div style="padding: 4px 8px; margin: 2px 0; background: #ffcdd2; border-radius: 4px; color: #d32f2f;">${ca}</div>`
+        ).join('');
+      } else {
+        errorDiv.innerHTML = '<div style="color: #999; font-style: italic;">No registration errors</div>';
+      }
+    }
+
+    function resetRegistrationForm() {
+      // Clear form fields
+      document.getElementById('reg-ca-numbers').value = '';
+      document.getElementById('reg-mobile').value = '';
+      document.getElementById('reg-email').value = '';
+      document.getElementById('reg-password').value = '';
+      
+      // Hide progress section
+      document.getElementById('progress-registration').style.display = 'none';
+      
+      // Reset progress
+      document.getElementById('fill-registration').style.width = '0%';
+      document.getElementById('progress-text-registration').textContent = '0%';
+      document.getElementById('status-text-registration').textContent = 'Waiting...';
+      document.getElementById('status-badge-registration').innerHTML = '';
+      document.getElementById('logs-registration').innerHTML = '';
+      
+      // Hide summary
+      document.getElementById('registration-summary').style.display = 'none';
+      
+      // Hide CA details section
+      document.getElementById('ca-details-section').style.display = 'none';
+      
+      // Reset button
+      const submitBtn = document.getElementById('register-btn');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '🚀 Register Account';
+      }
+      
+      // Clear session
+      currentSessionId = null;
+      if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        statusCheckInterval = null;
+      }
+    }
+
+    window.addEventListener('load', initializeApp);
+  </script>
+</body>
+
+
+</html>
+
