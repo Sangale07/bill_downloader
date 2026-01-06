@@ -744,6 +744,81 @@ except Exception:
 app = Flask(__name__)
 CORS(app)
 
+def generate_month_range(start_month, end_month, format_type="MMYYYY"):
+    """
+    Generate a list of months between start_month and end_month (inclusive)
+    
+    Args:
+        start_month: Start month in format "YYYY-MM" or "MMYYYY"
+        end_month: End month in format "YYYY-MM" or "MMYYYY" 
+        format_type: Output format - "MMYYYY" or "YYYY-MM"
+    
+    Returns:
+        List of months in the specified format
+    """
+    from datetime import datetime, timedelta
+    import calendar
+    
+    def parse_month(month_str):
+        """Parse month string in various formats"""
+        month_str = str(month_str).strip()
+        
+        # Handle MMYYYY format (e.g., "012025")
+        if len(month_str) == 6 and month_str.isdigit():
+            mm, yyyy = month_str[:2], month_str[2:]
+            return int(yyyy), int(mm)
+        
+        # Handle YYYY-MM format (e.g., "2025-01")
+        if "-" in month_str:
+            parts = month_str.split("-")
+            if len(parts) == 2:
+                return int(parts[0]), int(parts[1])
+        
+        # Handle MM/YYYY format (e.g., "01/2025")
+        if "/" in month_str:
+            parts = month_str.split("/")
+            if len(parts) == 2:
+                return int(parts[1]), int(parts[0])
+        
+        raise ValueError(f"Invalid month format: {month_str}")
+    
+    def format_month(year, month, fmt):
+        """Format month according to specified format"""
+        if fmt == "MMYYYY":
+            return f"{month:02d}{year}"
+        elif fmt == "YYYY-MM":
+            return f"{year}-{month:02d}"
+        else:
+            raise ValueError(f"Unsupported format: {fmt}")
+    
+    try:
+        start_year, start_month_num = parse_month(start_month)
+        end_year, end_month_num = parse_month(end_month)
+        
+        # Create datetime objects for the first day of each month
+        start_date = datetime(start_year, start_month_num, 1)
+        end_date = datetime(end_year, end_month_num, 1)
+        
+        if start_date > end_date:
+            raise ValueError("Start month cannot be after end month")
+        
+        months = []
+        current_date = start_date
+        
+        while current_date <= end_date:
+            months.append(format_month(current_date.year, current_date.month, format_type))
+            
+            # Move to next month
+            if current_date.month == 12:
+                current_date = current_date.replace(year=current_date.year + 1, month=1)
+            else:
+                current_date = current_date.replace(month=current_date.month + 1)
+        
+        return months
+        
+    except Exception as e:
+        raise ValueError(f"Error generating month range: {str(e)}")
+
 downloads: Dict[str, dict] = {}
 
 
@@ -2096,15 +2171,22 @@ def download_msedcl(ca_numbers, session_id, mode: str, bill_months,
 
 
 # -------------------- Madhya Pradesh Poorva Kshetra DISCOM --------------------
-def download_mp_poorva_kshetra(ca_numbers, bill_month, session_id):
+def download_mp_poorva_kshetra(ca_numbers, bill_months, session_id):
     """
     Download bills from MP Poorva Kshetra DISCOM (MPEZ/MPPKVVCL)
     """
+    # Handle both single month (string) and multiple months (list) for backward compatibility
+    if isinstance(bill_months, str):
+        bill_months = [bill_months]
+    if not bill_months:
+        bill_months = [datetime.now().strftime("%Y-%m")]
+    
+    total_requests = len(ca_numbers) * len(bill_months)
     downloads[session_id] = {
         "status": "downloading",
         "progress": 0,
         "completed": 0,
-        "total": len(ca_numbers),
+        "total": total_requests,
         "logs": [],
         "files": {}
     }
@@ -2132,85 +2214,86 @@ def download_mp_poorva_kshetra(ca_numbers, bill_month, session_id):
         'Origin': BASE_URL.rstrip("/")
     })
 
-    # Parse bill month (format: YYYY-MM)
-    try:
-        year_str, month_str = bill_month.split("-")
-        year, month = int(year_str), int(month_str)
-        if not (1 <= month <= 12):
-            raise ValueError("Invalid month")
-    except Exception as e:
-        log(f"✗ Invalid bill month format: {bill_month}. Use YYYY-MM (e.g., 2025-10)")
-        downloads[session_id]["status"] = "error"
-        return
-
-    for idx, ca_number in enumerate(ca_numbers):
+    for ca_number in ca_numbers:
         ca_number = str(ca_number).strip()
-        try:
-            log(f"Processing CA: {ca_number} (MP Poorva Kshetra)")
+        for bill_month in bill_months:
+            try:
+                log(f"Processing CA: {ca_number} for {bill_month} (MP Poorva Kshetra)")
 
-            # Normalize CA number
-            ivrs = normalize_ivrs(ca_number)
-            log(f"Normalized IVRS: {ivrs}")
-
-            # Build request
-            url = f"{BASE_URL}{ENDPOINT}"
-            payload = {
-                "ivrs": ivrs,
-                "txtDate": build_txtdate(year, month)
-            }
-
-            # Try to fetch PDF (with retry)
-            pdf_data = None
-            last_error = None
-
-            for attempt in range(2):  # 2 attempts
+                # Parse bill month (format: YYYY-MM)
                 try:
-                    response = s.post(url, data=payload, timeout=30, allow_redirects=True)
+                    year_str, month_str = bill_month.split("-")
+                    year, month = int(year_str), int(month_str)
+                    if not (1 <= month <= 12):
+                        raise ValueError("Invalid month")
+                except Exception as e:
+                    log(f"✗ Invalid bill month format: {bill_month}. Use YYYY-MM (e.g., 2025-10)")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
 
-                    if response.status_code == 200:
-                        content = response.content
+                # Normalize CA number
+                ivrs = normalize_ivrs(ca_number)
+                log(f"Normalized IVRS: {ivrs}")
 
-                        # Check if it's a PDF
-                        if content[:5] == b'%PDF-':
-                            pdf_data = content
-                            break
-                        
-                        # Check content type
-                        content_type = response.headers.get('Content-Type', '').lower()
-                        if 'pdf' in content_type:
-                            pdf_data = content
-                            break
-                        
-                        last_error = f"Not a PDF (Content-Type: {content_type or 'unknown'})"
-                    else:
-                        last_error = f"HTTP {response.status_code}"
+                # Build request
+                url = f"{BASE_URL}{ENDPOINT}"
+                payload = {
+                    "ivrs": ivrs,
+                    "txtDate": build_txtdate(year, month)
+                }
 
-                except requests.exceptions.Timeout:
-                    last_error = "Request timeout"
-                except requests.exceptions.RequestException as e:
-                    last_error = f"Network error: {str(e)[:50]}"
+                # Try to fetch PDF (with retry)
+                pdf_data = None
+                last_error = None
 
-                if attempt == 0 and not pdf_data:
-                    time.sleep(1)  # Wait before retry
+                for attempt in range(2):  # 2 attempts
+                    try:
+                        response = s.post(url, data=payload, timeout=30, allow_redirects=True)
 
-            if pdf_data and len(pdf_data) > 1000:
-                # Save PDF
-                filename = f"MPPK_{ivrs}_{year:04d}-{month:02d}.pdf"
-                # Rename with extracted date
-                filename = rename_pdf_with_date(filename, pdf_data, "MPPK")
-                downloads[session_id]["files"][filename] = pdf_data
-                log(f"✓ {ca_number}: Downloaded ({len(pdf_data)} bytes) - {filename}")
-            else:
-                log(f"✗ {ca_number}: {last_error or 'No PDF received'}")
+                        if response.status_code == 200:
+                            content = response.content
 
-        except Exception as e:
-            log(f"✗ {ca_number}: {str(e)[:120]}")
+                            # Check if it's a PDF
+                            if content[:5] == b'%PDF-':
+                                pdf_data = content
+                                break
+                            
+                            # Check content type
+                            content_type = response.headers.get('Content-Type', '').lower()
+                            if 'pdf' in content_type:
+                                pdf_data = content
+                                break
+                            
+                            last_error = f"Not a PDF (Content-Type: {content_type or 'unknown'})"
+                        else:
+                            last_error = f"HTTP {response.status_code}"
 
-        downloads[session_id]["completed"] += 1
-        downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / downloads[session_id]["total"])
+                    except requests.exceptions.Timeout:
+                        last_error = "Request timeout"
+                    except requests.exceptions.RequestException as e:
+                        last_error = f"Network error: {str(e)[:50]}"
 
-        # Small delay between requests
-        if idx < len(ca_numbers) - 1:
+                    if attempt == 0 and not pdf_data:
+                        time.sleep(1)  # Wait before retry
+
+                if pdf_data and len(pdf_data) > 1000:
+                    # Save PDF
+                    filename = f"MPPK_{ivrs}_{year:04d}-{month:02d}.pdf"
+                    # Rename with extracted date
+                    filename = rename_pdf_with_date(filename, pdf_data, "MPPK")
+                    downloads[session_id]["files"][filename] = pdf_data
+                    log(f"✓ {ca_number} ({bill_month}): Downloaded ({len(pdf_data)} bytes) - {filename}")
+                else:
+                    log(f"✗ {ca_number} ({bill_month}): {last_error or 'No PDF received'}")
+
+            except Exception as e:
+                log(f"✗ {ca_number} ({bill_month}): {str(e)[:120]}")
+
+            downloads[session_id]["completed"] += 1
+            downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+
+            # Small delay between requests
             time.sleep(1)
 
     downloads[session_id]["status"] = "completed"
@@ -2300,7 +2383,7 @@ def download_upcl_discom(account_numbers, session_id):
 
 
 # -------------------- UPPCL DISCOM --------------------
-def download_uppcl_discom(board, ca_numbers, bill_month, session_id):
+def download_uppcl_discom(board, ca_numbers, bill_months, session_id):
     try:
         import base64
     except Exception as e:
@@ -2310,11 +2393,18 @@ def download_uppcl_discom(board, ca_numbers, bill_month, session_id):
         }
         return
 
+    # Handle both single month (string) and multiple months (list) for backward compatibility
+    if isinstance(bill_months, str):
+        bill_months = [bill_months]
+    if not bill_months:
+        bill_months = [datetime.now().strftime("%Y-%m")]
+
+    total_requests = len(ca_numbers) * len(bill_months)
     downloads[session_id] = {
         "status": "downloading",
         "progress": 0,
         "completed": 0,
-        "total": len(ca_numbers),
+        "total": total_requests,
         "logs": [],
         "files": {}
     }
@@ -2362,121 +2452,137 @@ def download_uppcl_discom(board, ca_numbers, bill_month, session_id):
     board_config = BOARDS[board]
     board_name = board_config['name']
 
-    # Parse bill month (format: YYYY-MM)
-    try:
-        year, month = bill_month.split('-')
-        from_date = f"01-{month}-{year}"
-        import calendar
-        last_day = calendar.monthrange(int(year), int(month))[1]
-        to_date = f"{last_day}-{month}-{year}"
-        log(f"📅 Searching for bills: {from_date} to {to_date}")
-    except Exception as e:
-        log(f"✗ Invalid bill month format: {bill_month}")
-        downloads[session_id]["status"] = "error"
-        return
-
     s = requests.Session()
 
-    for idx, ca_number in enumerate(ca_numbers):
+    for ca_number in ca_numbers:
         ca_number = str(ca_number).strip()
-        try:
-            log(f"Processing CA: {ca_number} ({board_name})")
+        for bill_month in bill_months:
+            try:
+                log(f"Processing CA: {ca_number} for {bill_month} ({board_name})")
 
-            # Step 1: Get bill details
-            payload1 = {
-                "KNumber": ca_number,
-                "SearchParameters": {
-                    "DateRange": {
-                        "FromDate": from_date,
-                        "ToDate": to_date
+                # Parse bill month (format: YYYY-MM)
+                try:
+                    year, month = bill_month.split('-')
+                    from_date = f"01-{month}-{year}"
+                    import calendar
+                    last_day = calendar.monthrange(int(year), int(month))[1]
+                    to_date = f"{last_day}-{month}-{year}"
+                    log(f"📅 Searching for bills: {from_date} to {to_date}")
+                except Exception as e:
+                    log(f"✗ Invalid bill month format: {bill_month}")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
+
+                # Step 1: Get bill details
+                payload1 = {
+                    "KNumber": ca_number,
+                    "SearchParameters": {
+                        "DateRange": {
+                            "FromDate": from_date,
+                            "ToDate": to_date
+                        }
                     }
                 }
-            }
 
-            r1 = s.post(board_config['get_bill_details_url'], 
-                       json=payload1, 
-                       headers=HEADERS, 
-                       timeout=30)
+                r1 = s.post(board_config['get_bill_details_url'], 
+                           json=payload1, 
+                           headers=HEADERS, 
+                           timeout=30)
 
-            if r1.status_code != 200:
-                log(f"✗ {ca_number}: HTTP {r1.status_code}")
-                continue
+                if r1.status_code != 200:
+                    log(f"✗ {ca_number} ({bill_month}): HTTP {r1.status_code}")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
 
-            bill_details_response = r1.json()
+                bill_details_response = r1.json()
 
-            if bill_details_response.get('ResCode') != '1':
-                msg = bill_details_response.get('ResMsg', 'Unknown error')
-                if 'no bill' in msg.lower():
-                    log(f"⚠ {ca_number}: No bills found")
+                if bill_details_response.get('ResCode') != '1':
+                    msg = bill_details_response.get('ResMsg', 'Unknown error')
+                    if 'no bill' in msg.lower():
+                        log(f"⚠ {ca_number} ({bill_month}): No bills found")
+                    else:
+                        log(f"✗ {ca_number} ({bill_month}): {msg}")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
+
+                bill_details = bill_details_response.get('BillDetails', [])
+                if not bill_details:
+                    log(f"⚠ {ca_number} ({bill_month}): No bill details")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
+
+                first_bill = bill_details[0]
+                bill_info = first_bill.get('BillInfo', {})
+                bill_no = bill_info.get('BillNo')
+                bill_month_year = first_bill.get('BillMonthYear')
+
+                if not bill_no or not bill_month_year:
+                    log(f"✗ {ca_number} ({bill_month}): Invalid bill data")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
+
+                # Step 2: Get bill PDF
+                payload2 = {
+                    "BillId": bill_no,
+                    "Flag": "BILL"
+                }
+
+                r2 = s.post(board_config['bill_view_url'], 
+                           json=payload2, 
+                           headers=HEADERS, 
+                           timeout=30)
+
+                if r2.status_code != 200:
+                    log(f"✗ {ca_number} ({bill_month}): PDF HTTP {r2.status_code}")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
+
+                bill_view_response = r2.json()
+
+                if bill_view_response.get('ResCode') != '1':
+                    log(f"✗ {ca_number} ({bill_month}): {bill_view_response.get('ResMsg', 'PDF error')}")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
+
+                base64_pdf = bill_view_response.get('ReportContents')
+                if not base64_pdf:
+                    log(f"✗ {ca_number} ({bill_month}): No PDF content")
+                    downloads[session_id]["completed"] += 1
+                    downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                    continue
+
+                # Decode PDF
+                pdf_bytes = base64.b64decode(base64_pdf)
+
+                # Create filename
+                parts = bill_month_year.split('-')
+                if len(parts) == 3:
+                    mm, yyyy = parts[1], parts[2]
                 else:
-                    log(f"✗ {ca_number}: {msg}")
-                continue
+                    mm, yyyy = month, year
 
-            bill_details = bill_details_response.get('BillDetails', [])
-            if not bill_details:
-                log(f"⚠ {ca_number}: No bill details")
-                continue
+                filename = f"{mm}_{yyyy}_{board}_{ca_number}_{bill_no}.pdf"
+                # Rename with extracted date
+                filename = rename_pdf_with_date(filename, pdf_bytes, board.upper())
+                downloads[session_id]["files"][filename] = pdf_bytes
 
-            first_bill = bill_details[0]
-            bill_info = first_bill.get('BillInfo', {})
-            bill_no = bill_info.get('BillNo')
-            bill_month_year = first_bill.get('BillMonthYear')
+                log(f"✓ {ca_number} ({bill_month}): Downloaded ({len(pdf_bytes)} bytes) - {filename}")
 
-            if not bill_no or not bill_month_year:
-                log(f"✗ {ca_number}: Invalid bill data")
-                continue
+            except Exception as e:
+                log(f"✗ {ca_number} ({bill_month}): {str(e)[:120]}")
 
-            # Step 2: Get bill PDF
-            payload2 = {
-                "BillId": bill_no,
-                "Flag": "BILL"
-            }
-
-            r2 = s.post(board_config['bill_view_url'], 
-                       json=payload2, 
-                       headers=HEADERS, 
-                       timeout=30)
-
-            if r2.status_code != 200:
-                log(f"✗ {ca_number}: PDF HTTP {r2.status_code}")
-                continue
-
-            bill_view_response = r2.json()
-
-            if bill_view_response.get('ResCode') != '1':
-                log(f"✗ {ca_number}: {bill_view_response.get('ResMsg', 'PDF error')}")
-                continue
-
-            base64_pdf = bill_view_response.get('ReportContents')
-            if not base64_pdf:
-                log(f"✗ {ca_number}: No PDF content")
-                continue
-
-            # Decode PDF
-            pdf_bytes = base64.b64decode(base64_pdf)
-
-            # Create filename
-            parts = bill_month_year.split('-')
-            if len(parts) == 3:
-                mm, yyyy = parts[1], parts[2]
-            else:
-                mm, yyyy = month, year
-
-            filename = f"{mm}_{yyyy}_{board}_{ca_number}_{bill_no}.pdf"
-            # Rename with extracted date
-            filename = rename_pdf_with_date(filename, pdf_bytes, board.upper())
-            downloads[session_id]["files"][filename] = pdf_bytes
-
-            log(f"✓ {ca_number}: Downloaded ({len(pdf_bytes)} bytes) - {filename}")
-
-        except Exception as e:
-            log(f"✗ {ca_number}: {str(e)[:120]}")
-
-        downloads[session_id]["completed"] += 1
-        downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / downloads[session_id]["total"])
-        
-        # Add delay between requests
-        time.sleep(2)
+            downloads[session_id]["completed"] += 1
+            downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+            
+            # Add delay between requests
+            time.sleep(2)
 
     downloads[session_id]["status"] = "completed"
 
@@ -4941,7 +5047,7 @@ def download_apepdcl(ca_numbers, session_id):
 
 
 # -------------------- Central Power Distribution Company of Andhra Pradesh (APCPDCL) --------------------
-def download_apcpdcl(ca_numbers, session_id, bill_month=None):
+def download_apcpdcl(ca_numbers, session_id, bill_months=None):
     """
     Download bills from Central Power Distribution Company of Andhra Pradesh (APCPDCL)
     URL: https://www.apcpdcl.in/ConsumerDashboard/BillandPayHistory?consumernames=MD%20Abdul%20Jaleel&uscno={CA_NUMBER}
@@ -4949,7 +5055,7 @@ def download_apcpdcl(ca_numbers, session_id, bill_month=None):
     Args:
         ca_numbers: List of CA numbers
         session_id: Session ID for tracking
-        bill_month: Specific month to download (e.g., "DEC-2025", "NOV-2025"). If None, downloads the most recent.
+        bill_months: List of specific months to download (e.g., ["DEC-2025", "NOV-2025"]). If None, downloads the most recent.
     """
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
@@ -4960,11 +5066,18 @@ def download_apcpdcl(ca_numbers, session_id, bill_month=None):
         }
         return
 
+    # Handle both single month (string) and multiple months (list) for backward compatibility
+    if isinstance(bill_months, str):
+        bill_months = [bill_months]
+    if not bill_months:
+        bill_months = [None]  # None means download most recent
+
+    total_requests = len(ca_numbers) * len(bill_months)
     downloads[session_id] = {
         "status": "downloading",
         "progress": 0,
         "completed": 0,
-        "total": len(ca_numbers),
+        "total": total_requests,
         "logs": [],
         "files": {}
     }
@@ -4973,381 +5086,323 @@ def download_apcpdcl(ca_numbers, session_id, bill_month=None):
 
     for ca_number in ca_numbers:
         ca_number = str(ca_number).strip()
-        pdf_data = None
-        
-        try:
-            log(f"Processing CA: {ca_number} (APCPDCL)")
-            if bill_month:
-                log(f"Target month: {bill_month}")
+        for bill_month in bill_months:
+            pdf_data = None
             
-            with sync_playwright() as p:
-                browser = p.chromium.launch(
-                    headless=True,
-                    args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled"]
-                )
-                context = browser.new_context(
-                    accept_downloads=True,
-                    ignore_https_errors=True,
-                    user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"),
-                    viewport={"width": 1366, "height": 900}
-                )
-                context.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined})")
+            try:
+                log(f"Processing CA: {ca_number} (APCPDCL)")
+                if bill_month:
+                    log(f"Target month: {bill_month}")
                 
-                page = context.new_page()
-                
-                # Navigate to the bill history page with CA number
-                url = f"https://www.apcpdcl.in/ConsumerDashboard/BillandPayHistory?consumernames=MD%20Abdul%20Jaleel&uscno={ca_number}"
-                log(f"Loading bill history page for CA: {ca_number}")
-                page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                
-                # Wait for page to load
-                try:
-                    page.wait_for_load_state("networkidle", timeout=15000)
-                except:
-                    pass
-                
-                # Wait a bit more for dynamic content
-                time.sleep(3)
-                
-                # Check if we have bill history table
-                try:
-                    # Look for the bill history table
-                    bill_table = page.query_selector('table')
-                    if not bill_table:
-                        log(f"✗ {ca_number}: No bill history table found")
-                        browser.close()
-                        continue
+                with sync_playwright() as p:
+                    browser = p.chromium.launch(
+                        headless=True,
+                        args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled"]
+                    )
+                    context = browser.new_context(
+                        accept_downloads=True,
+                        ignore_https_errors=True,
+                        user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"),
+                        viewport={"width": 1366, "height": 900}
+                    )
+                    context.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined})")
                     
-                    log(f"✓ Found bill history table for CA: {ca_number}")
+                    page = context.new_page()
                     
-                    # Find all rows in the bill history table
-                    table_rows = page.query_selector_all('table tr')
-                    if len(table_rows) <= 1:  # Only header row
-                        log(f"✗ {ca_number}: No bill data found in table")
-                        browser.close()
-                        continue
+                    # Navigate to the bill history page with CA number
+                    url = f"https://www.apcpdcl.in/ConsumerDashboard/BillandPayHistory?consumernames=MD%20Abdul%20Jaleel&uscno={ca_number}"
+                    log(f"Loading bill history page for CA: {ca_number}")
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
                     
-                    # Look for the specific month or the most recent one
-                    target_button = None
-                    target_row_index = None
-                    found_months = []
+                    # Wait for page to load
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=15000)
+                    except:
+                        pass
                     
-                    for row_index, row in enumerate(table_rows[1:], 1):  # Skip header row, start from 1
-                        try:
-                            # Get all cells in the row
-                            cells = row.query_selector_all('td')
-                            if len(cells) < 4:  # Need at least month, date, amount, download columns
-                                continue
-                            
-                            # Extract month from the row (usually in first or second column)
-                            month_text = ""
-                            for i in range(min(3, len(cells))):  # Check first 3 columns for month
-                                cell_text = cells[i].inner_text().strip()
-                                if any(month in cell_text.upper() for month in ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
-                                                                               'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']):
-                                    month_text = cell_text
-                                    break
-                            
-                            if not month_text:
-                                continue
-                            
-                            found_months.append(month_text)
-                            
-                            # Look for "Current Bill" button in this row using multiple methods
-                            current_bill_buttons = []
-                            
-                            # Method 1: Try the specific CSS selector pattern (adjusted for row)
-                            try:
-                                specific_selector = f'body > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child({row_index + 1}) > td:nth-child(5) > button:nth-child(1)'
-                                specific_button = page.query_selector(specific_selector)
-                                if specific_button:
-                                    current_bill_buttons.append(specific_button)
-                                    log(f"✓ Found button using specific CSS selector for row {row_index + 1}")
-                            except Exception as e:
-                                log(f"⚠ Specific selector failed for row {row_index + 1}: {str(e)[:50]}")
-                            
-                            # Method 2: Look within the row for buttons
-                            if not current_bill_buttons:
-                                current_bill_buttons = row.query_selector_all('input[value="Current Bill"], button:has-text("Current Bill")')
-                            
-                            # Method 3: Try alternative selectors within the row
-                            if not current_bill_buttons:
-                                current_bill_buttons = row.query_selector_all('input[type="button"], button')
-                                current_bill_buttons = [btn for btn in current_bill_buttons 
-                                                      if btn.inner_text() and 'current' in btn.inner_text().lower()]
-                            
-                            # Method 4: Look for any button in the 5th column (download column)
-                            if not current_bill_buttons and len(cells) >= 5:
-                                download_cell = cells[4]  # 5th column (0-indexed)
-                                current_bill_buttons = download_cell.query_selector_all('button, input[type="button"]')
-                            
-                            if current_bill_buttons:
-                                button = current_bill_buttons[0]
-                                
-                                # Check if this is the month we want
-                                if bill_month:
-                                    if bill_month.upper() in month_text.upper():
-                                        target_button = button
-                                        target_row_index = row_index
-                                        log(f"✓ Found target month {bill_month} with Current Bill button in row {row_index + 1}")
-                                        break
-                                else:
-                                    # If no specific month requested, take the first available (most recent)
-                                    if not target_button:
-                                        target_button = button
-                                        target_row_index = row_index
-                                        log(f"✓ Found Current Bill button for month: {month_text} in row {row_index + 1}")
-                                        break
-                        
-                        except Exception as e:
-                            log(f"⚠ Error processing table row {row_index + 1}: {str(e)[:100]}")
-                            continue
+                    # Wait a bit more for dynamic content
+                    time.sleep(3)
                     
-                    if found_months:
-                        log(f"Available months: {', '.join(found_months[:5])}{'...' if len(found_months) > 5 else ''}")
-                    
-                    if not target_button:
-                        if bill_month:
-                            log(f"✗ {ca_number}: No Current Bill button found for month {bill_month}")
-                        else:
-                            log(f"✗ {ca_number}: No Current Bill buttons found")
-                        
-                        # Last resort: Try the exact CSS selector provided
-                        log(f"🔄 Trying exact CSS selector as fallback...")
-                        try:
-                            exact_button = page.query_selector('body > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(1) > td:nth-child(5) > button:nth-child(1)')
-                            if exact_button and exact_button.is_visible():
-                                target_button = exact_button
-                                log(f"✓ Found button using exact CSS selector (first row)")
-                            else:
-                                # Try a few more rows with the same pattern
-                                for row_num in range(2, 6):  # Try rows 2-5
-                                    selector = f'body > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child({row_num}) > td:nth-child(5) > button:nth-child(1)'
-                                    button = page.query_selector(selector)
-                                    if button and button.is_visible():
-                                        target_button = button
-                                        log(f"✓ Found button using exact CSS selector (row {row_num})")
-                                        break
-                        except Exception as e:
-                            log(f"⚠ Exact CSS selector also failed: {str(e)[:100]}")
-                        
-                        if not target_button:
+                    # Check if we have bill history table
+                    try:
+                        # Look for the bill history table
+                        bill_table = page.query_selector('table')
+                        if not bill_table:
+                            log(f"✗ {ca_number}: No bill history table found")
                             browser.close()
                             continue
-                    
-                    # Set up download listener before clicking
-                    download_info = {"download": None}
-                    
-                    def handle_download(download):
-                        download_info["download"] = download
-                        log(f"Download started: {download.suggested_filename}")
-                    
-                    page.on("download", handle_download)
-                    
-                    # Click the Current Bill button
-                    try:
-                        button_text = target_button.inner_text() or target_button.get_attribute('value') or 'Current Bill'
-                        log(f"Clicking Current Bill button: {button_text}")
                         
-                        # Scroll the button into view first
-                        try:
-                            target_button.scroll_into_view_if_needed()
-                            time.sleep(1)
-                        except:
-                            pass
+                        log(f"✓ Found bill history table for CA: {ca_number}")
                         
-                        # Set up listeners for new pages/popups BEFORE clicking
-                        new_page_info = {"page": None, "ready": False}
+                        # Find all rows in the bill history table
+                        table_rows = page.query_selector_all('table tr')
+                        if len(table_rows) <= 1:  # Only header row
+                            log(f"✗ {ca_number}: No bill data found in table")
+                            browser.close()
+                            continue
                         
-                        def handle_new_page(new_page):
-                            new_page_info["page"] = new_page
-                            log(f"✓ New page/popup detected: {new_page.url}")
+                        # Look for the specific month or the most recent one
+                        target_button = None
+                        target_row_index = None
+                        found_months = []
                         
-                        context.on("page", handle_new_page)
-                        
-                        # Click the button and wait for popup
-                        click_success = False
-                        
-                        try:
-                            # Method 1: Regular click with popup expectation
+                        for row_index, row in enumerate(table_rows[1:], 1):  # Skip header row, start from 1
                             try:
-                                with context.expect_page(timeout=15000) as popup_info:
-                                    target_button.click(timeout=5000)
-                                    click_success = True
-                                    log(f"✓ Button clicked successfully (regular click)")
+                                # Get all cells in the row
+                                cells = row.query_selector_all('td')
+                                if len(cells) < 4:  # Need at least month, date, amount, download columns
+                                    continue
                                 
-                                # Get the popup page
-                                popup_page = popup_info.value
-                                new_page_info["page"] = popup_page
-                                log(f"✓ Popup captured: {popup_page.url}")
+                                # Extract month from the row (usually in first or second column)
+                                month_text = ""
+                                for i in range(min(3, len(cells))):  # Check first 3 columns for month
+                                    cell_text = cells[i].inner_text().strip()
+                                    if any(month in cell_text.upper() for month in ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                                                                                   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']):
+                                        month_text = cell_text
+                                        break
                                 
-                            except Exception as e:
-                                log(f"⚠ Regular click with popup expectation failed: {str(e)[:100]}")
+                                if not month_text:
+                                    continue
                                 
-                                # Method 2: Force click if regular click failed
+                                found_months.append(month_text)
+                                
+                                # Look for "Current Bill" button in this row using multiple methods
+                                current_bill_buttons = []
+                                
+                                # Method 1: Try the specific CSS selector pattern (adjusted for row)
                                 try:
-                                    target_button.click(force=True, timeout=5000)
-                                    click_success = True
-                                    log(f"✓ Button clicked successfully (force click)")
-                                except Exception as e2:
-                                    log(f"⚠ Force click failed: {str(e2)[:100]}")
+                                    specific_selector = f'body > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child({row_index + 1}) > td:nth-child(5) > button:nth-child(1)'
+                                    specific_button = page.query_selector(specific_selector)
+                                    if specific_button:
+                                        current_bill_buttons.append(specific_button)
+                                        log(f"✓ Found button using specific CSS selector for row {row_index + 1}")
+                                except Exception as e:
+                                    log(f"⚠ Specific selector failed for row {row_index + 1}: {str(e)[:50]}")
+                                
+                                # Method 2: Look within the row for buttons
+                                if not current_bill_buttons:
+                                    current_bill_buttons = row.query_selector_all('input[value="Current Bill"], button:has-text("Current Bill")')
+                                
+                                # Method 3: Try alternative selectors within the row
+                                if not current_bill_buttons:
+                                    current_bill_buttons = row.query_selector_all('input[type="button"], button')
+                                    current_bill_buttons = [btn for btn in current_bill_buttons 
+                                                          if btn.inner_text() and 'current' in btn.inner_text().lower()]
+                                
+                                # Method 4: Look for any button in the 5th column (download column)
+                                if not current_bill_buttons and len(cells) >= 5:
+                                    download_cell = cells[4]  # 5th column (0-indexed)
+                                    current_bill_buttons = download_cell.query_selector_all('button, input[type="button"]')
+                                
+                                if current_bill_buttons:
+                                    button = current_bill_buttons[0]
                                     
-                                    # Method 3: JavaScript click if both failed
-                                    try:
-                                        page.evaluate("(element) => element.click()", target_button)
-                                        click_success = True
-                                        log(f"✓ Button clicked successfully (JavaScript click)")
-                                    except Exception as e3:
-                                        log(f"⚠ JavaScript click failed: {str(e3)[:100]}")
-                        
-                        except Exception as e:
-                            log(f"⚠ All click methods failed: {str(e)[:100]}")
-                        
-                        if not click_success:
-                            log(f"✗ Could not click the Current Bill button")
-                            raise Exception("Could not click the Current Bill button")
-                        
-                        # Wait for popup or new page to appear
-                        log(f"⏳ Waiting for bill popup/new page...")
-                        for i in range(30):  # Wait up to 30 seconds
-                            if new_page_info["page"]:
-                                break
+                                    # Check if this is the month we want
+                                    if bill_month:
+                                        if bill_month.upper() in month_text.upper():
+                                            target_button = button
+                                            target_row_index = row_index
+                                            log(f"✓ Found target month {bill_month} with Current Bill button in row {row_index + 1}")
+                                            break
+                                    else:
+                                        # If no specific month requested, take the first available (most recent)
+                                        if not target_button:
+                                            target_button = button
+                                            target_row_index = row_index
+                                            log(f"✓ Found Current Bill button for month: {month_text} in row {row_index + 1}")
+                                            break
                             
-                            # Check if pages list has grown
-                            current_pages = context.pages
-                            if len(current_pages) > 1:
-                                new_page_info["page"] = current_pages[-1]  # Get the latest page
-                                log(f"✓ Found new page in context: {new_page_info['page'].url}")
-                                break
-                            
-                            time.sleep(1)
+                            except Exception as e:
+                                log(f"⚠ Error processing table row {row_index + 1}: {str(e)[:100]}")
+                                continue
                         
-                        # Check for direct download first
-                        if download_info["download"]:
-                            download = download_info["download"]
-                            pdf_data = download.read_all_bytes()
-                            log(f"✓ Direct download captured for CA: {ca_number} ({len(pdf_data)} bytes)")
+                        if found_months:
+                            log(f"Available months: {', '.join(found_months[:5])}{'...' if len(found_months) > 5 else ''}")
                         
-                        # If no direct download, try to get PDF from popup/new page
-                        elif new_page_info["page"]:
-                            popup_page = new_page_info["page"]
-                            log(f"✓ Processing popup page: {popup_page.url}")
+                        if not target_button:
+                            if bill_month:
+                                log(f"✗ {ca_number} ({bill_month}): No Current Bill button found for month {bill_month}")
+                            else:
+                                log(f"✗ {ca_number}: No Current Bill buttons found")
                             
+                            # Last resort: Try the exact CSS selector provided
+                            log(f"🔄 Trying exact CSS selector as fallback...")
                             try:
-                                # Wait for the popup page to fully load
-                                popup_page.wait_for_load_state("networkidle", timeout=15000)
-                                log(f"✓ Popup page loaded completely")
-                                
-                                # Check if the popup contains the actual bill (not the history page)
-                                page_content = popup_page.content()
-                                page_text = popup_page.evaluate("() => document.body.innerText")
-                                
-                                log(f"📄 Popup page title: {popup_page.title()}")
-                                log(f"📄 Popup content preview: {page_text[:200]}...")
-                                
-                                if "Bill & Payment History Details" in page_content:
-                                    log(f"⚠ Popup still shows history page, waiting for bill to load...")
-                                    time.sleep(5)
-                                    
-                                    # Try to wait for bill content to appear
-                                    try:
-                                        # Look for bill-specific content
-                                        popup_page.wait_for_function(
-                                            "() => !document.body.innerText.includes('Bill & Payment History Details') || document.body.innerText.includes('ELECTRICITY BILL') || document.body.innerText.includes('Bill Amount') || document.body.innerText.includes('Consumer Details')",
-                                            timeout=10000
-                                        )
-                                        log(f"✓ Bill content detected in popup")
-                                    except:
-                                        log(f"⚠ Timeout waiting for bill content, proceeding anyway")
-                                        
-                                    # Check content again after waiting
-                                    updated_text = popup_page.evaluate("() => document.body.innerText")
-                                    log(f"📄 Updated popup content: {updated_text[:200]}...")
-                                
+                                exact_button = page.query_selector('body > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(1) > td:nth-child(5) > button:nth-child(1)')
+                                if exact_button and exact_button.is_visible():
+                                    target_button = exact_button
+                                    log(f"✓ Found button using exact CSS selector (first row)")
                                 else:
-                                    log(f"✓ Popup appears to contain bill content (not history page)")
-                                
-                                # Generate PDF from the popup
-                                pdf_data = popup_page.pdf(
-                                    format="A4",
-                                    print_background=True,
-                                    margin={"top": "0.5cm", "right": "0.5cm", "bottom": "0.5cm", "left": "0.5cm"},
-                                    wait_for_fonts=True
-                                )
-                                log(f"✓ Generated PDF from popup for CA: {ca_number} ({len(pdf_data)} bytes)")
-                                
-                                # Close the popup
-                                try:
-                                    popup_page.close()
-                                except:
-                                    pass
-                                
+                                    # Try a few more rows with the same pattern
+                                    for row_num in range(2, 6):  # Try rows 2-5
+                                        selector = f'body > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child({row_num}) > td:nth-child(5) > button:nth-child(1)'
+                                        button = page.query_selector(selector)
+                                        if button and button.is_visible():
+                                            target_button = button
+                                            log(f"✓ Found button using exact CSS selector (row {row_num})")
+                                            break
                             except Exception as e:
-                                log(f"✗ Error processing popup: {str(e)[:100]}")
-                                
-                                # Fallback: try to generate PDF anyway
+                                log(f"⚠ Exact CSS selector also failed: {str(e)[:100]}")
+                            
+                            if not target_button:
+                                browser.close()
+                                downloads[session_id]["completed"] += 1
+                                downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
+                                continue
+                        
+                        # Set up download listener before clicking
+                        download_info = {"download": None}
+                        
+                        def handle_download(download):
+                            download_info["download"] = download
+                            log(f"Download started: {download.suggested_filename}")
+                        
+                        page.on("download", handle_download)
+                        
+                        # Click the Current Bill button
+                        try:
+                            button_text = target_button.inner_text() or target_button.get_attribute('value') or 'Current Bill'
+                            log(f"Clicking Current Bill button: {button_text}")
+                            
+                            # Scroll the button into view first
+                            try:
+                                target_button.scroll_into_view_if_needed()
+                                time.sleep(1)
+                            except:
+                                pass
+                            
+                            # Set up listeners for new pages/popups BEFORE clicking
+                            new_page_info = {"page": None, "ready": False}
+                            
+                            def handle_new_page(new_page):
+                                new_page_info["page"] = new_page
+                                log(f"✓ New page/popup detected: {new_page.url}")
+                            
+                            context.on("page", handle_new_page)
+                            
+                            # Click the button and wait for popup
+                            click_success = False
+                            
+                            try:
+                                # Method 1: Regular click with popup expectation
                                 try:
+                                    with context.expect_page(timeout=15000) as popup_info:
+                                        target_button.click(timeout=5000)
+                                        click_success = True
+                                        log(f"✓ Button clicked successfully (regular click)")
+                                    
+                                    # Get the popup page
+                                    popup_page = popup_info.value
+                                    new_page_info["page"] = popup_page
+                                    log(f"✓ Popup captured: {popup_page.url}")
+                                    
+                                except Exception as e:
+                                    log(f"⚠ Regular click with popup expectation failed: {str(e)[:100]}")
+                                    
+                                    # Method 2: Force click if regular click failed
+                                    try:
+                                        target_button.click(force=True, timeout=5000)
+                                        click_success = True
+                                        log(f"✓ Button clicked successfully (force click)")
+                                    except Exception as e2:
+                                        log(f"⚠ Force click failed: {str(e2)[:100]}")
+                                        
+                                        # Method 3: JavaScript click if both failed
+                                        try:
+                                            page.evaluate("(element) => element.click()", target_button)
+                                            click_success = True
+                                            log(f"✓ Button clicked successfully (JavaScript click)")
+                                        except Exception as e3:
+                                            log(f"⚠ JavaScript click failed: {str(e3)[:100]}")
+                            
+                            except Exception as e:
+                                log(f"⚠ All click methods failed: {str(e)[:100]}")
+                            
+                            if not click_success:
+                                log(f"✗ Could not click the Current Bill button")
+                                raise Exception("Could not click the Current Bill button")
+                            
+                            # Wait for popup or new page to appear
+                            log(f"⏳ Waiting for bill popup/new page...")
+                            for i in range(30):  # Wait up to 30 seconds
+                                if new_page_info["page"]:
+                                    break
+                                
+                                # Check if pages list has grown
+                                current_pages = context.pages
+                                if len(current_pages) > 1:
+                                    new_page_info["page"] = current_pages[-1]  # Get the latest page
+                                    log(f"✓ Found new page in context: {new_page_info['page'].url}")
+                                    break
+                                
+                                time.sleep(1)
+                            
+                            # Check for direct download first
+                            if download_info["download"]:
+                                download = download_info["download"]
+                                pdf_data = download.read_all_bytes()
+                                log(f"✓ Direct download captured for CA: {ca_number} ({len(pdf_data)} bytes)")
+                            
+                            # If no direct download, try to get PDF from popup/new page
+                            elif new_page_info["page"]:
+                                popup_page = new_page_info["page"]
+                                log(f"✓ Processing popup page: {popup_page.url}")
+                                
+                                try:
+                                    # Wait for the popup page to fully load
+                                    popup_page.wait_for_load_state("networkidle", timeout=15000)
+                                    log(f"✓ Popup page loaded completely")
+                                    
+                                    # Generate PDF from the popup
                                     pdf_data = popup_page.pdf(
                                         format="A4",
                                         print_background=True,
-                                        margin={"top": "0.5cm", "right": "0.5cm", "bottom": "0.5cm", "left": "0.5cm"}
+                                        margin={"top": "0.5cm", "right": "0.5cm", "bottom": "0.5cm", "left": "0.5cm"},
+                                        wait_for_fonts=True
                                     )
-                                    log(f"✓ Fallback PDF generated from popup for CA: {ca_number} ({len(pdf_data)} bytes)")
-                                except Exception as e2:
-                                    log(f"✗ Fallback PDF generation failed: {str(e2)[:100]}")
+                                    log(f"✓ Generated PDF from popup for CA: {ca_number} ({len(pdf_data)} bytes)")
+                                    
+                                    # Close the popup
+                                    try:
+                                        popup_page.close()
+                                    except:
+                                        pass
+                                    
+                                except Exception as e:
+                                    log(f"✗ Error processing popup: {str(e)[:100]}")
+                            
+                            else:
+                                log(f"⚠ {ca_number}: No popup detected and no direct download")
                         
-                        else:
-                            log(f"⚠ {ca_number}: No popup detected and no direct download")
-                            
-                            # Last resort: check current page again
-                            try:
-                                # Wait a bit more in case the page content changed
-                                time.sleep(5)
-                                
-                                # Check if the main page now shows the bill
-                                current_content = page.content()
-                                if "Bill & Payment History Details" not in current_content or "ELECTRICITY BILL" in current_content:
-                                    log(f"✓ Main page might now show the bill, generating PDF...")
-                                    pdf_data = page.pdf(
-                                        format="A4",
-                                        print_background=True,
-                                        margin={"top": "0.5cm", "right": "0.5cm", "bottom": "0.5cm", "left": "0.5cm"}
-                                    )
-                                    log(f"✓ Generated PDF from main page for CA: {ca_number} ({len(pdf_data)} bytes)")
-                                else:
-                                    log(f"✗ Main page still shows history, no bill content found")
-                            
-                            except Exception as e:
-                                log(f"✗ Last resort PDF generation failed: {str(e)[:100]}")
+                        except Exception as e:
+                            log(f"✗ {ca_number}: Error in bill download process - {str(e)[:100]}")
                     
                     except Exception as e:
-                        log(f"✗ {ca_number}: Error in bill download process - {str(e)[:100]}")
-                
-                except Exception as e:
-                    log(f"✗ {ca_number}: Error processing bill history - {str(e)[:100]}")
-                
-                browser.close()
-                
-        except Exception as e:
-            log(f"✗ {ca_number}: Error - {str(e)[:160]}")
+                        log(f"✗ {ca_number}: Error processing bill history - {str(e)[:100]}")
+                    
+                    browser.close()
+                    
+            except Exception as e:
+                log(f"✗ {ca_number} ({bill_month or 'latest'}): Error - {str(e)[:160]}")
 
-        if pdf_data and len(pdf_data) > 500:
-            # Create filename with month if specified
-            if bill_month:
-                filename = f"APCPDCL_{ca_number}_{bill_month}.pdf"
+            if pdf_data and len(pdf_data) > 500:
+                # Create filename with month if specified
+                if bill_month:
+                    filename = f"APCPDCL_{ca_number}_{bill_month}.pdf"
+                else:
+                    filename = f"APCPDCL_{ca_number}.pdf"
+                
+                # Rename with extracted date
+                filename = rename_pdf_with_date(filename, pdf_data, "APCPDCL")
+                downloads[session_id]["files"][filename] = pdf_data
+                log(f"✓ {ca_number} ({bill_month or 'latest'}): Downloaded ({len(pdf_data)} bytes) - {filename}")
             else:
-                filename = f"APCPDCL_{ca_number}.pdf"
-            
-            # Rename with extracted date
-            filename = rename_pdf_with_date(filename, pdf_data, "APCPDCL")
-            downloads[session_id]["files"][filename] = pdf_data
-            log(f"✓ {ca_number}: Downloaded ({len(pdf_data)} bytes) - {filename}")
-        else:
-            log(f"✗ {ca_number}: Could not capture PDF")
+                log(f"✗ {ca_number} ({bill_month or 'latest'}): Could not capture PDF")
 
-        downloads[session_id]["completed"] += 1
-        downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / downloads[session_id]["total"])
+            downloads[session_id]["completed"] += 1
+            downloads[session_id]["progress"] = int(downloads[session_id]["completed"] * 100 / total_requests)
 
     downloads[session_id]["status"] = "completed"
 
@@ -6942,11 +6997,32 @@ def start_download():
     ca_numbers = data.get('ca_numbers', [])
     months = data.get('months', ['092025'])
 
+    # Handle month range functionality
+    start_month = data.get('start_month', '')
+    end_month = data.get('end_month', '')
+    
+    # If month range is provided, generate the month list
+    if start_month and end_month:
+        try:
+            if board in ["mp_poorva_kshetra", "uppcl_discom", "apcpdcl"]:
+                # These boards use YYYY-MM format
+                months = generate_month_range(start_month, end_month, "YYYY-MM")
+            else:
+                # Other boards use MMYYYY format
+                months = generate_month_range(start_month, end_month, "MMYYYY")
+        except ValueError as e:
+            return jsonify({"error": f"Invalid month range: {str(e)}"}), 400
+
     msedcl_mode = (data.get('msedcl_mode') or '').upper()
     bill_month = data.get('bill_month', '')  # For backward compatibility
     bill_months = data.get('bill_months', [])  # New: support for multiple months
     if not bill_months and bill_month:
         bill_months = [bill_month]  # Convert single month to list
+    
+    # If month range was generated, use it for bill_months as well
+    if start_month and end_month and board in ["mp_poorva_kshetra", "uppcl_discom", "apcpdcl"]:
+        bill_months = months
+    
     cookie_header = data.get('cookie', '')
     bu_map = data.get('bu_map', {})
 
@@ -6967,7 +7043,7 @@ def start_download():
 
     if board == "chandigarh":
         if not months:
-            months = ['092025']
+            months = ['092025', '102025', '112025', '122025', '012026', '022026']  # Sep 2025 to Feb 2026
         threading.Thread(target=download_chandigarh, args=(ca_numbers, months, session_id)).start()
     elif board == "bses":
         threading.Thread(target=download_bses, args=(ca_numbers, session_id)).start()
@@ -6989,10 +7065,14 @@ def start_download():
             return jsonify({"error": "Login ID, password, and bill numbers required"}), 400
         threading.Thread(target=download_goa_discom, args=(login_id, password, bill_numbers, session_id)).start()
     elif board == "mp_poorva_kshetra":
-        bill_month = data.get('bill_month', '')
-        if not ca_numbers or not bill_month:
-            return jsonify({"error": "CA numbers and bill month required"}), 400
-        threading.Thread(target=download_mp_poorva_kshetra, args=(ca_numbers, bill_month, session_id)).start()
+        bill_months = data.get('bill_months', ['2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02'])  # Sep 2025 to Feb 2026
+        if not ca_numbers or not bill_months:
+            return jsonify({"error": "CA numbers and bill months required"}), 400
+        # For backward compatibility, support single bill_month
+        single_bill_month = data.get('bill_month', '')
+        if single_bill_month and not bill_months:
+            bill_months = [single_bill_month]
+        threading.Thread(target=download_mp_poorva_kshetra, args=(ca_numbers, bill_months, session_id)).start()
     elif board == "upcl_discom":
         account_numbers = data.get('account_numbers', [])
         if not account_numbers:
@@ -7000,10 +7080,14 @@ def start_download():
         threading.Thread(target=download_upcl_discom, args=(account_numbers, session_id)).start()
     elif board == "uppcl_discom":
         uppcl_board = data.get('uppcl_board', 'mvvnl')
-        bill_month = data.get('bill_month', '')
-        if not ca_numbers or not bill_month:
-            return jsonify({"error": "CA numbers and bill month required"}), 400
-        threading.Thread(target=download_uppcl_discom, args=(uppcl_board, ca_numbers, bill_month, session_id)).start()
+        bill_months = data.get('bill_months', ['2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02'])  # Sep 2025 to Feb 2026
+        if not ca_numbers or not bill_months:
+            return jsonify({"error": "CA numbers and bill months required"}), 400
+        # For backward compatibility, support single bill_month
+        single_bill_month = data.get('bill_month', '')
+        if single_bill_month and not bill_months:
+            bill_months = [single_bill_month]
+        threading.Thread(target=download_uppcl_discom, args=(uppcl_board, ca_numbers, bill_months, session_id)).start()
     elif board == "dakshin_gujarat":
         if not ca_numbers:
             return jsonify({"error": "CA numbers required"}), 400
@@ -7028,8 +7112,14 @@ def start_download():
     elif board == "apcpdcl":
         if not ca_numbers:
             return jsonify({"error": "CA numbers required"}), 400
-        bill_month = data.get('bill_month', '')  # Get bill month if provided
-        threading.Thread(target=download_apcpdcl, args=(ca_numbers, session_id, bill_month)).start()
+        bill_months = data.get('bill_months', ['2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02'])  # Sep 2025 to Feb 2026
+        if not bill_months:
+            bill_months = [datetime.now().strftime("%Y-%m")]  # Default to current month
+        # For backward compatibility, support single bill_month
+        single_bill_month = data.get('bill_month', '')
+        if single_bill_month and not bill_months:
+            bill_months = [single_bill_month]
+        threading.Thread(target=download_apcpdcl, args=(ca_numbers, session_id, bill_months)).start()
     elif board == "apspdcl":
         if not ca_numbers:
             return jsonify({"error": "CA numbers required"}), 400
@@ -7038,7 +7128,7 @@ def start_download():
         if not ca_numbers:
             return jsonify({"error": "CA numbers required"}), 400
         if not months:
-            months = ['012025']  # Default to Jan 2025
+            months = ['092025', '102025', '112025', '122025', '012026', '022026']  # Sep 2025 to Feb 2026
         threading.Thread(target=download_ndmc, args=(ca_numbers, months, session_id)).start()
     elif board == "bescom":
         # Parse BESCOM credentials from ca_numbers field
@@ -8293,21 +8383,21 @@ def get_boards():
             {"id": "tgspdcl", "name": "Telangana Southern Power", "icon": "⚡"},
             {"id": "dakshin_gujarat", "name": "Dakshin Gujarat (DGVCL)", "icon": "🌊"},
             {"id": "apepdcl", "name": "AP Eastern Power (APEPDCL)", "icon": "⚡"},
-            {"id": "apcpdcl", "name": "AP Central Power (APCPDCL)", "icon": "⚡"},
+            {"id": "apcpdcl", "name": "AP Central Power (APCPDCL)", "icon": "⚡", "has_months": True},
             {"id": "apspdcl", "name": "AP Southern Power (APSPDCL)", "icon": "⚡"},
             {"id": "goa_discom", "name": "Goa DISCOM", "icon": "🏖️"},
-            {"id": "mp_poorva_kshetra", "name": "MP Poorva Kshetra", "icon": "🏛️"},
+            {"id": "mp_poorva_kshetra", "name": "MP Poorva Kshetra", "icon": "🏛️", "has_months": True},
             {"id": "mp_madhya_kshetra", "name": "MP Madhya Kshetra", "icon": "🏛️"},
             {"id": "mp_paschim_kshetra", "name": "MP Paschim Kshetra", "icon": "🏛️"},
             {"id": "kerala_kseb", "name": "Kerala KSEB", "icon": "🌴"},
-            {"id": "bescom", "name": "BESCOM (Karnataka)", "icon": "🏭"},
-            {"id": "cescmysore", "name": "CESC Mysore (Karnataka)", "icon": "🏢"},
-            {"id": "gescom", "name": "GESCOM (Karnataka)", "icon": "⚡"},
-            {"id": "hescom", "name": "HESCOM (Karnataka)", "icon": "🔌"},
-            {"id": "mescom", "name": "MESCOM (Karnataka)", "icon": "🏢"},
+            {"id": "bescom", "name": "BESCOM (Karnataka)", "icon": "🏭", "has_months": True},
+            {"id": "cescmysore", "name": "CESC Mysore (Karnataka)", "icon": "🏢", "has_months": True},
+            {"id": "gescom", "name": "GESCOM (Karnataka)", "icon": "⚡", "has_months": True},
+            {"id": "hescom", "name": "HESCOM (Karnataka)", "icon": "🔌", "has_months": True},
+            {"id": "mescom", "name": "MESCOM (Karnataka)", "icon": "🏢", "has_months": True},
             {"id": "ndmc", "name": "New Delhi Municipal Council", "icon": "🏛️", "has_months": True},
             {"id": "upcl_discom", "name": "UPCL (Uttarakhand)", "icon": "⛰️"},
-            {"id": "uppcl_discom", "name": "UPPCL DISCOM (UP)", "icon": "⚡"},
+            {"id": "uppcl_discom", "name": "UPPCL DISCOM (UP)", "icon": "⚡", "has_months": True},
             {"id": "msedcl", "name": "MSEDCL (Maharashtra)", "icon": "🇮🇳"},
         ]
     })

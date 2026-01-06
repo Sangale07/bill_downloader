@@ -629,7 +629,21 @@
               <div class="board-header">⚡ AP Central Power (APCPDCL)</div>
               <form onsubmit="handleSubmit(event, 'apcpdcl')">
                 <div class="form-group">
-                  <label>Bill Month (Optional)</label>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-apcpdcl" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-apcpdcl" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
                   <select id="apcpdcl-month">
                     <option value="">Latest Available Month</option>
                     <option value="DEC-2025">December 2025</option>
@@ -648,7 +662,7 @@
                     <option value="NOV-2024">November 2024</option>
                     <option value="OCT-2024">October 2024</option>
                   </select>
-                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                  <div class="help">Select a specific month (this will override the month range above) or leave blank for latest available</div>
                 </div>
                 <div class="form-group">
                   <label>CA Numbers (one per line)</label>
@@ -682,9 +696,23 @@
               <div class="board-header">🏛️ MP Poorva Kshetra</div>
               <form onsubmit="handleSubmit(event, 'mp_poorva_kshetra')">
                 <div class="form-group">
-                  <label>Bill Month</label>
-                  <input type="month" id="mp-month" required />
-                  <div class="help">Select the month for which you want to download bills</div>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-mp_poorva_kshetra" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-mp_poorva_kshetra" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
+                  <input type="month" id="mp-month" />
+                  <div class="help">Select a specific month (this will override the month range above)</div>
                 </div>
                 <div class="form-group">
                   <label>CA Numbers (one per line)</label>
@@ -847,9 +875,23 @@
                   <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
                 </div>
                 <div class="form-group">
-                  <label>Bill Month (Optional)</label>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-bescom" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-bescom" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
                   <input type="month" id="bescom-month" />
-                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                  <div class="help">Select a specific month (this will override the month range above) or leave blank for latest available</div>
                 </div>
                 <div class="form-group">
                   <label>Download Options</label>
@@ -891,9 +933,23 @@
                   <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
                 </div>
                 <div class="form-group">
-                  <label>Bill Month (Optional)</label>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-cescmysore" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-cescmysore" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
                   <input type="month" id="cescmysore-month" />
-                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                  <div class="help">Select a specific month (this will override the month range above) or leave blank for latest available</div>
                 </div>
                 <div class="form-group">
                   <label>Download Options</label>
@@ -935,9 +991,23 @@
                   <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
                 </div>
                 <div class="form-group">
-                  <label>Bill Month (Optional)</label>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-gescom" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-gescom" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
                   <input type="month" id="gescom-month" />
-                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                  <div class="help">Select a specific month (this will override the month range above) or leave blank for latest available</div>
                 </div>
                 <div class="form-group">
                   <label>Download Options</label>
@@ -979,9 +1049,23 @@
                   <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded.</div>
                 </div>
                 <div class="form-group">
-                  <label>Bill Month (Optional)</label>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-hescom" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-hescom" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
                   <input type="month" id="hescom-month" />
-                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                  <div class="help">Select a specific month (this will override the month range above) or leave blank for latest available</div>
                 </div>
                 <div class="form-group">
                   <label>Download Options</label>
@@ -1023,9 +1107,23 @@
                   <div class="help">Enter username and password separated by comma. Optionally add specific CA number as third parameter. If no CA number is provided, all available CA numbers for that account will be downloaded. Note: MESCOM does not require captcha solving.</div>
                 </div>
                 <div class="form-group">
-                  <label>Bill Month (Optional)</label>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-mescom" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-mescom" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
                   <input type="month" id="mescom-month" />
-                  <div class="help">Select a specific month or leave blank to download the most recent available bill</div>
+                  <div class="help">Select a specific month (this will override the month range above) or leave blank for latest available</div>
                 </div>
                 <div class="form-group">
                   <label>Download Options</label>
@@ -1103,9 +1201,23 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>Bill Month</label>
-                  <input type="month" id="uppcl-month" required />
-                  <div class="help">Select the month for which you want to download bills</div>
+                  <label>Month Range</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                      <input type="month" id="start-month-uppcl_discom" placeholder="2025-01" />
+                    </div>
+                    <div>
+                      <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                      <input type="month" id="end-month-uppcl_discom" placeholder="2025-04" />
+                    </div>
+                  </div>
+                  <div class="help">Select start and end months to download bills for the entire range.</div>
+                </div>
+                <div class="form-group">
+                  <label>Or Select Single Month</label>
+                  <input type="month" id="uppcl-month" />
+                  <div class="help">Select a specific month (this will override the month range above)</div>
                 </div>
                 <div class="form-group">
                   <label>CA Numbers (one per line)</label>
@@ -1314,9 +1426,23 @@
                 </div>
                 ${b.has_months ? `
                   <div class="form-group">
-                    <label>Months (MMYYYY format, one per line)</label>
-                    <textarea id="months-${b.id}" placeholder="092025">092025</textarea>
-                    <div class="help">Example: 092025 for Sep 2025, 082025 for Aug 2025</div>
+                    <label>Month Range</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                      <div>
+                        <label style="font-size: 0.9em; margin-bottom: 5px;">Start Month</label>
+                        <input type="month" id="start-month-${b.id}" placeholder="2025-01" />
+                      </div>
+                      <div>
+                        <label style="font-size: 0.9em; margin-bottom: 5px;">End Month</label>
+                        <input type="month" id="end-month-${b.id}" placeholder="2025-04" />
+                      </div>
+                    </div>
+                    <div class="help">Select start and end months to download bills for the entire range. Leave empty to use default months.</div>
+                  </div>
+                  <div class="form-group">
+                    <label>Or Enter Months Manually (MMYYYY format, one per line)</label>
+                    <textarea id="months-${b.id}" placeholder="092025&#10;102025&#10;112025" rows="3"></textarea>
+                    <div class="help">Example: 092025 for Sep 2025, 082025 for Aug 2025. This will override the month range above.</div>
                   </div>` : ''}
                 <div class="button-group">
                   <button type="submit" class="btn-primary">⬇️ Download</button>
@@ -1499,21 +1625,28 @@
         payload.password = password;
         payload.bill_numbers = billNumbers;
       } else if (boardId === 'mp_poorva_kshetra') {
-        const bill_month = (document.getElementById('mp-month').value || '').trim();
         const cas = (document.getElementById('ca-mp_poorva_kshetra').value || '').split('\n').map(x => x.trim()).filter(Boolean);
-
-
-        if (!bill_month) {
-          alert('Please select bill month');
-          return;
-        }
+        
         if (cas.length === 0) {
           alert('Please enter at least one CA number');
           return;
         }
 
+        // Handle month range or manual input
+        const startMonth = (document.getElementById(`start-month-${boardId}`).value || '').trim();
+        const endMonth = (document.getElementById(`end-month-${boardId}`).value || '').trim();
+        const bill_month = (document.getElementById('mp-month').value || '').trim();
 
-        payload.bill_month = bill_month;
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
+          payload.bill_month = bill_month;
+        } else {
+          alert('Please select either a month range or a specific month');
+          return;
+        }
+
         payload.ca_numbers = cas;
       } else if (boardId === 'upcl_discom') {
         const accountNumbers = (document.getElementById('account-upcl_discom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
@@ -1528,22 +1661,29 @@
         payload.account_numbers = accountNumbers;
       } else if (boardId === 'uppcl_discom') {
         const uppcl_board = (document.getElementById('uppcl-board').value || '').trim();
-        const bill_month = (document.getElementById('uppcl-month').value || '').trim();
         const cas = (document.getElementById('ca-uppcl_discom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
 
-
-        if (!bill_month) {
-          alert('Please select bill month');
-          return;
-        }
         if (cas.length === 0) {
           alert('Please enter at least one CA number');
           return;
         }
 
+        // Handle month range or manual input
+        const startMonth = (document.getElementById(`start-month-${boardId}`).value || '').trim();
+        const endMonth = (document.getElementById(`end-month-${boardId}`).value || '').trim();
+        const bill_month = (document.getElementById('uppcl-month').value || '').trim();
+
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
+          payload.bill_month = bill_month;
+        } else {
+          alert('Please select either a month range or a specific month');
+          return;
+        }
 
         payload.uppcl_board = uppcl_board;
-        payload.bill_month = bill_month;
         payload.ca_numbers = cas;
       } else if (boardId === 'msedcl') {
         const mode = document.getElementById('msedcl-mode').value;
@@ -1617,22 +1757,49 @@
         payload.ca_mobile_pairs = ca_mobile_pairs;
       } else if (boardId === 'apcpdcl') {
         const cas = (document.getElementById('ca-apcpdcl').value || '').split('\n').map(x => x.trim()).filter(Boolean);
-        const bill_month = (document.getElementById('apcpdcl-month').value || '').trim();
         
         if (cas.length === 0) {
           alert('Please enter at least one CA number');
           return;
         }
-        
-        payload.ca_numbers = cas;
-        if (bill_month) {
+
+        // Handle month range or manual input
+        const startMonth = (document.getElementById(`start-month-${boardId}`).value || '').trim();
+        const endMonth = (document.getElementById(`end-month-${boardId}`).value || '').trim();
+        const bill_month = (document.getElementById('apcpdcl-month').value || '').trim();
+
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
           payload.bill_month = bill_month;
         }
+        // If neither is provided, backend will use defaults
+
+        payload.ca_numbers = cas;
       } else if (boardId === 'bescom') {
         const credentials = (document.getElementById('ca-bescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
-        let bill_month = (document.getElementById('bescom-month').value || '').trim();
         const fetch_history = document.getElementById('bescom-history').value === 'true';
         
+        if (credentials.length === 0) {
+          alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
+          return;
+        }
+        
+        // Validate credential format
+        for (const cred of credentials) {
+          const parts = cred.split(',').map(p => p.trim());
+          if (parts.length < 2) {
+            alert('Invalid credential format. Each line should contain at least USERNAME,PASSWORD');
+            return;
+          }
+        }
+
+        // Handle month range or single month
+        const startMonth = (document.getElementById('start-month-bescom').value || '').trim();
+        const endMonth = (document.getElementById('end-month-bescom').value || '').trim();
+        let bill_month = (document.getElementById('bescom-month').value || '').trim();
+
         // Convert month input format (YYYY-MM) to BESCOM format (MON-YYYY)
         if (bill_month) {
           const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
@@ -1641,6 +1808,19 @@
           const monthIndex = parseInt(month) - 1;
           bill_month = `${monthNames[monthIndex]}-${year}`;
         }
+
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        
+        payload.ca_numbers = credentials;
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'cescmysore') {
+        const credentials = (document.getElementById('ca-cescmysore').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        const fetch_history = document.getElementById('cescmysore-history').value === 'true';
         
         if (credentials.length === 0) {
           alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
@@ -1655,17 +1835,12 @@
             return;
           }
         }
-        
-        payload.ca_numbers = credentials;
-        if (bill_month) {
-          payload.bill_month = bill_month;
-        }
-        payload.fetch_history = fetch_history;
-      } else if (boardId === 'cescmysore') {
-        const credentials = (document.getElementById('ca-cescmysore').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+        // Handle month range or single month
+        const startMonth = (document.getElementById('start-month-cescmysore').value || '').trim();
+        const endMonth = (document.getElementById('end-month-cescmysore').value || '').trim();
         let bill_month = (document.getElementById('cescmysore-month').value || '').trim();
-        const fetch_history = document.getElementById('cescmysore-history').value === 'true';
-        
+
         // Convert month input format (YYYY-MM) to CESC Mysore format (MON-YYYY)
         if (bill_month) {
           const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
@@ -1674,6 +1849,19 @@
           const monthIndex = parseInt(month) - 1;
           bill_month = `${monthNames[monthIndex]}-${year}`;
         }
+
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        
+        payload.ca_numbers = credentials;
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'gescom') {
+        const credentials = (document.getElementById('ca-gescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        const fetch_history = document.getElementById('gescom-history').value === 'true';
         
         if (credentials.length === 0) {
           alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
@@ -1688,17 +1876,12 @@
             return;
           }
         }
-        
-        payload.ca_numbers = credentials;
-        if (bill_month) {
-          payload.bill_month = bill_month;
-        }
-        payload.fetch_history = fetch_history;
-      } else if (boardId === 'gescom') {
-        const credentials = (document.getElementById('ca-gescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+        // Handle month range or single month
+        const startMonth = (document.getElementById('start-month-gescom').value || '').trim();
+        const endMonth = (document.getElementById('end-month-gescom').value || '').trim();
         let bill_month = (document.getElementById('gescom-month').value || '').trim();
-        const fetch_history = document.getElementById('gescom-history').value === 'true';
-        
+
         // Convert month input format (YYYY-MM) to GESCOM format (MON-YYYY)
         if (bill_month) {
           const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
@@ -1707,6 +1890,19 @@
           const monthIndex = parseInt(month) - 1;
           bill_month = `${monthNames[monthIndex]}-${year}`;
         }
+
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        
+        payload.ca_numbers = credentials;
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'hescom') {
+        const credentials = (document.getElementById('ca-hescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        const fetch_history = document.getElementById('hescom-history').value === 'true';
         
         if (credentials.length === 0) {
           alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
@@ -1721,17 +1917,12 @@
             return;
           }
         }
-        
-        payload.ca_numbers = credentials;
-        if (bill_month) {
-          payload.bill_month = bill_month;
-        }
-        payload.fetch_history = fetch_history;
-      } else if (boardId === 'hescom') {
-        const credentials = (document.getElementById('ca-hescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+        // Handle month range or single month
+        const startMonth = (document.getElementById('start-month-hescom').value || '').trim();
+        const endMonth = (document.getElementById('end-month-hescom').value || '').trim();
         let bill_month = (document.getElementById('hescom-month').value || '').trim();
-        const fetch_history = document.getElementById('hescom-history').value === 'true';
-        
+
         // Convert month input format (YYYY-MM) to HESCOM format (MON-YYYY)
         if (bill_month) {
           const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
@@ -1740,6 +1931,19 @@
           const monthIndex = parseInt(month) - 1;
           bill_month = `${monthNames[monthIndex]}-${year}`;
         }
+
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
+          payload.bill_month = bill_month;
+        }
+        
+        payload.ca_numbers = credentials;
+        payload.fetch_history = fetch_history;
+      } else if (boardId === 'mescom') {
+        const credentials = (document.getElementById('ca-mescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+        const fetch_history = document.getElementById('mescom-history').value === 'true';
         
         if (credentials.length === 0) {
           alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
@@ -1754,17 +1958,12 @@
             return;
           }
         }
-        
-        payload.ca_numbers = credentials;
-        if (bill_month) {
-          payload.bill_month = bill_month;
-        }
-        payload.fetch_history = fetch_history;
-      } else if (boardId === 'mescom') {
-        const credentials = (document.getElementById('ca-mescom').value || '').split('\n').map(x => x.trim()).filter(Boolean);
+
+        // Handle month range or single month
+        const startMonth = (document.getElementById('start-month-mescom').value || '').trim();
+        const endMonth = (document.getElementById('end-month-mescom').value || '').trim();
         let bill_month = (document.getElementById('mescom-month').value || '').trim();
-        const fetch_history = document.getElementById('mescom-history').value === 'true';
-        
+
         // Convert month input format (YYYY-MM) to MESCOM format (MON-YYYY)
         if (bill_month) {
           const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
@@ -1773,44 +1972,50 @@
           const monthIndex = parseInt(month) - 1;
           bill_month = `${monthNames[monthIndex]}-${year}`;
         }
-        
-        if (credentials.length === 0) {
-          alert('Please enter at least one set of credentials (format: USERNAME,PASSWORD or USERNAME,PASSWORD,CA_NUMBER)');
-          return;
-        }
-        
-        // Validate credential format
-        for (const cred of credentials) {
-          const parts = cred.split(',').map(p => p.trim());
-          if (parts.length < 2) {
-            alert('Invalid credential format. Each line should contain at least USERNAME,PASSWORD');
-            return;
-          }
+
+        if (startMonth && endMonth) {
+          payload.start_month = startMonth;
+          payload.end_month = endMonth;
+        } else if (bill_month) {
+          payload.bill_month = bill_month;
         }
         
         payload.ca_numbers = credentials;
-        if (bill_month) {
-          payload.bill_month = bill_month;
-        }
         payload.fetch_history = fetch_history;
       } else {
         const cas = (document.getElementById(`ca-${boardId}`).value || '').split('\n').map(x => x.trim()).filter(Boolean);
         if (cas.length === 0) { alert('Please enter at least one CA number'); return; }
         payload.ca_numbers = cas;
 
+        // Handle month range inputs for boards that support it
+        const board = boards.find(b => b.id === boardId);
+        if (board && board.has_months) {
+          const startMonth = (document.getElementById(`start-month-${boardId}`).value || '').trim();
+          const endMonth = (document.getElementById(`end-month-${boardId}`).value || '').trim();
+          const manualMonths = (document.getElementById(`months-${boardId}`).value || '')
+            .split('\n').map(s => s.trim()).filter(Boolean);
 
-        if (boardId === 'chandigarh') {
-          const months = (document.getElementById(`months-${boardId}`).value || '')
-            .split('\n').map(s => s.trim()).filter(Boolean);
-          payload.months = months.length ? months : ['092025'];
-        } else if (boardId === 'jharkhand') {
-          const months = (document.getElementById(`months-${boardId}`).value || '')
-            .split('\n').map(s => s.trim()).filter(Boolean);
-          payload.months = months.length ? months : ['082025'];
-        } else if (boardId === 'ndmc') {
-          const months = (document.getElementById(`months-${boardId}`).value || '')
-            .split('\n').map(s => s.trim()).filter(Boolean);
-          payload.months = months.length ? months : ['012025'];
+          // If manual months are provided, use them (they override month range)
+          if (manualMonths.length > 0) {
+            if (boardId === 'chandigarh' || boardId === 'jharkhand' || boardId === 'ndmc') {
+              payload.months = manualMonths;
+            }
+          } 
+          // Otherwise, if month range is provided, use it
+          else if (startMonth && endMonth) {
+            payload.start_month = startMonth;
+            payload.end_month = endMonth;
+          }
+          // Otherwise, use defaults
+          else {
+            if (boardId === 'chandigarh') {
+              payload.months = ['092025'];
+            } else if (boardId === 'jharkhand') {
+              payload.months = ['082025'];
+            } else if (boardId === 'ndmc') {
+              payload.months = ['012025'];
+            }
+          }
         }
       }
 
